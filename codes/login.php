@@ -1,3 +1,9 @@
+<?php
+if(isset($erreur)) {
+    echo $erreur;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
