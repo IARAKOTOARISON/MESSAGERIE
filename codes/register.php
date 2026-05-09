@@ -9,31 +9,38 @@ $succes = isset($_GET['succes']) ? "Inscription réussie ! Vous pouvez maintenan
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscription</title>
+    <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-    <h1>Créer un compte</h1>
-    
-    <?php
-    if ($erreur) { ?>
-        <p style="color: red;"><?= htmlspecialchars($erreur); ?></p>
-    <?php }
-    if ($succes) { ?>
-        <p style="color: green;"><?= htmlspecialchars($succes); ?></p>
-    <?php }
-    ?>
-    
-    <form method="POST" action="traitements/traitementRegister.php">
-        <label for="username">Nom d'utilisateur:</label>
-        <input type="text" id="username" name="username" required>
-        <br>
+    <div class="auth-container">
+        <h1>Créer un compte</h1>
         
-        <label for="password">Mot de passe:</label>
-        <input type="password" id="password" name="password" required>
-        <br>
+        <?php
+        if ($erreur) { ?>
+            <div class="alert alert-danger"><?= htmlspecialchars($erreur); ?></div>
+        <?php }
+        if ($succes) { ?>
+            <div class="alert alert-success"><?= htmlspecialchars($succes); ?></div>
+        <?php }
+        ?>
         
-        <input type="submit" value="S'inscrire">
-    </form>
-    
-    <p><a href="login.php">Déjà inscrit ? Connectez-vous</a></p>
+        <form method="POST" action="traitements/traitementRegister.php">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <input type="submit" value="S'inscrire">
+        </form>
+        
+        <div class="auth-link">
+            <p>Déjà inscrit ? <a href="login.php">Se connecter</a></p>
+        </div>
+    </div>
 </body>
 </html>
