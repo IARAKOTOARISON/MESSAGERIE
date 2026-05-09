@@ -1,0 +1,19 @@
+[XAMPP / Apache / MySQL]
+
+messagerie/
+│
+├── login.php
+├── register.php
+├── inbox.php
+├── conversation.php
+├── send_message.php
+│
+├── uploads/
+│
+├── fake_login/
+│   ├── index.php
+│   └── phishing.php
+│
+└── assets/
+    ├── js/
+    └── css/

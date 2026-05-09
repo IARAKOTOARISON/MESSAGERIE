@@ -1,4 +1,7 @@
-sujet : systeme de messagerie
+sujet : systeme de messagerie le plus simple possible
+
+- pas de gestion de message de groupe
+- juste envoie de message a une autre personne (peut etre texte et photo)
 
 technologie : 
     codes: PHP
