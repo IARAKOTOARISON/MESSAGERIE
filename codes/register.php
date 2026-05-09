@@ -14,12 +14,12 @@ $succes = isset($_GET['succes']) ? "Inscription réussie ! Vous pouvez maintenan
     <h1>Créer un compte</h1>
     
     <?php
-    if ($erreur) {
-        echo '<p style="color: red;">' . htmlspecialchars($erreur) . '</p>';
-    }
-    if ($succes) {
-        echo '<p style="color: green;">' . htmlspecialchars($succes) . '</p>';
-    }
+    if ($erreur) { ?>
+        <p style="color: red;"><?= htmlspecialchars($erreur); ?></p>
+    <?php }
+    if ($succes) { ?>
+        <p style="color: green;"><?= htmlspecialchars($succes); ?></p>
+    <?php }
     ?>
     
     <form method="POST" action="traitements/traitementRegister.php">
