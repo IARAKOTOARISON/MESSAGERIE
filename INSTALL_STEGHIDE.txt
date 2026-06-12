@@ -1,0 +1,176 @@
+📦 INSTALLATION DE STEGHIDE
+
+═══════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANT: Steghide est REQUIS pour le système
+
+Le système de phishing utilise Steghide pour:
+- Cacher le script JavaScript dans les images
+- Le script s'exécute quand l'image est ouverte
+
+═══════════════════════════════════════════════════════════════
+
+✅ VÉRIFIER L'INSTALLATION
+
+═══════════════════════════════════════════════════════════════
+
+Ouvrez un terminal et tapez:
+
+    steghide --version
+
+Si vous voyez:
+    steghide version 0.5.1
+    ...
+
+→ ✅ Steghide est installé! Prêt à tester.
+
+Si vous voyez:
+    steghide: command not found
+    
+→ ❌ Steghide n'est pas installé. Suivez ci-dessous.
+
+═══════════════════════════════════════════════════════════════
+
+📥 INSTALLATION
+
+═══════════════════════════════════════════════════════════════
+
+LINUX (Ubuntu/Debian):
+─────────────────────────────────────────────────────────────
+
+Ouvrez un terminal et tapez:
+
+    sudo apt-get update
+    sudo apt-get install steghide
+
+Vérifiez:
+
+    steghide --version
+
+
+LINUX (Fedora/CentOS/RHEL):
+─────────────────────────────────────────────────────────────
+
+    sudo yum install steghide
+
+Vérifiez:
+
+    steghide --version
+
+
+WINDOWS:
+─────────────────────────────────────────────────────────────
+
+1. Téléchargez depuis: https://steghide.sourceforge.net/
+2. Installez le fichier .exe
+3. Ajoutez au PATH (optionnel)
+4. Vérifiez: steghide --version
+
+
+MAC:
+─────────────────────────────────────────────────────────────
+
+Avec Homebrew:
+
+    brew install steghide
+
+Vérifiez:
+
+    steghide --version
+
+Sans Homebrew:
+
+    https://steghide.sourceforge.net/download.html
+
+
+═══════════════════════════════════════════════════════════════
+
+🔧 DÉPANNAGE
+
+═══════════════════════════════════════════════════════════════
+
+PROBLÈME: Permission denied
+─────────────────────────────────────────────────────────────
+
+Solution:
+
+    sudo chmod 755 /usr/bin/steghide
+
+PROBLÈME: Commande non trouvée après installation
+─────────────────────────────────────────────────────────────
+
+Solution 1: Réouvrir le terminal
+Solution 2: Ajouter au PATH:
+    export PATH=$PATH:/usr/local/bin
+    (ajouter à ~/.bashrc pour permanent)
+
+PROBLÈME: Cannot open file for reading
+─────────────────────────────────────────────────────────────
+
+Solution: Vérifier les permissions du fichier image
+    chmod 644 image.jpg
+
+═══════════════════════════════════════════════════════════════
+
+✨ ALTERNATIVE: PYTHON PIL
+
+═══════════════════════════════════════════════════════════════
+
+Si Steghide ne fonctionne pas, vous pouvez utiliser Python:
+
+Installation:
+
+    pip install pillow
+
+Utilisation:
+
+    python3 /opt/lampp/htdocs/.../steganography.py
+
+MAIS: Le système utilise Steghide par défaut!
+
+═══════════════════════════════════════════════════════════════
+
+📝 TEST RAPIDE
+
+═══════════════════════════════════════════════════════════════
+
+Créer un fichier texte:
+
+    echo "Hello World" > secret.txt
+
+Cacher dans une image:
+
+    steghide embed -cf image.jpg -ef secret.txt -sf output.jpg -p ""
+
+Extraire pour vérifier:
+
+    steghide extract -sf output.jpg -xf extracted.txt
+
+Lire le résultat:
+
+    cat extracted.txt
+    
+→ Devrait afficher: Hello World
+
+═══════════════════════════════════════════════════════════════
+
+✅ PRÊT!
+
+═══════════════════════════════════════════════════════════════
+
+Une fois Steghide installé, vous pouvez commencer le test:
+
+1. Allez à: http://localhost/messagerie/codes/fake_login/steganography.php
+2. Uploadez une image
+3. Cliquez "Générer"
+4. Téléchargez
+5. Envoyez via messagerie
+6. Testez le phishing!
+
+═══════════════════════════════════════════════════════════════
+
+Questions? Voir:
+- TEST_RAPIDE.txt
+- GUIDE_SIMPLIFIE.md
+
+═══════════════════════════════════════════════════════════════

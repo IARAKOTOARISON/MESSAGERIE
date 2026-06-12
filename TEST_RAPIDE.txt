@@ -1,0 +1,195 @@
+🎯 TEST COMPLET EN 10 MINUTES
+
+═══════════════════════════════════════════════════════════════
+
+⏱️ TEMPS: 10 minutes
+
+═══════════════════════════════════════════════════════════════
+
+✅ PRÉ-REQUIS
+
+□ XAMPP actif (Apache + MySQL)
+□ 2 comptes créés (attaquant + victime)
+□ Steghide installé: steghide --version
+□ Une image JPG/PNG pour le test
+
+
+═══════════════════════════════════════════════════════════════
+
+🚀 ÉTAPES DU TEST
+
+═══════════════════════════════════════════════════════════════
+
+[1] LOGIN ATTAQUANT (1 min)
+────────────────────────────────────
+
+URL: http://localhost/messagerie/codes/login.php
+Username: attaquant
+Password: motdepasse
+
+→ Connecté ✓
+
+
+[2] GÉNÉRER L'IMAGE (2 min)
+────────────────────────────────────
+
+URL: http://localhost/messagerie/codes/fake_login/steganography.php
+
+Actions:
+1. Glissez une image dans la zone (JPG/PNG/BMP)
+2. Cliquez "🔐 Générer l'Image Stéganographiée"
+3. Attendez 2-3 secondes
+4. Téléchargez l'image
+
+→ Image téléchargée ✓
+
+
+[3] ENVOYER PAR MESSAGERIE (2 min)
+────────────────────────────────────
+
+URL: http://localhost/messagerie/codes/inbox.php
+
+Actions:
+1. Sélectionnez "victime" (ou créez une nouvelle conversation)
+2. Cliquez sur l'icône 🖼️
+3. Sélectionnez l'image téléchargée
+4. Cliquez "Envoyer"
+
+→ Image envoyée ✓
+
+
+[4] TESTER LE PHISHING (3 min)
+────────────────────────────────────
+
+Actions (en fenêtre PRIVÉE):
+1. Déconnectez-vous
+   (Ou ouvrez une fenêtre privée: Ctrl+Shift+N)
+
+2. Accédez à la messagerie de "victime"
+   URL: http://localhost/messagerie/codes/inbox.php
+
+3. Cliquez sur le message d'attaquant
+
+4. Cliquez sur l'image pour la télécharger
+
+5. 🎯 LE POP-UP S'AFFICHE!
+
+6. Entrez des identifiants de TEST:
+   Username: test_user
+   Password: test123
+
+7. Cliquez "Se reconnecter"
+
+→ Données capturées ✓
+
+
+[5] VÉRIFIER LES CAPTURES (2 min)
+────────────────────────────────────
+
+Actions (reconnectez-vous comme attaquant):
+1. URL: http://localhost/messagerie/codes/fake_login/dashboard.php
+
+2. 📊 LE TABLEAU AFFICHE:
+   - Nom d'utilisateur: test_user
+   - Mot de passe: test123
+   - Date/Heure
+   - Adresse IP
+
+→ Phishing fonctionne! ✓✓✓
+
+
+═══════════════════════════════════════════════════════════════
+
+📋 CHECKLIST
+
+═══════════════════════════════════════════════════════════════
+
+□ Steghide installé
+□ Image générée avec succès
+□ Image envoyée via messagerie
+□ Image visible dans la conversation
+□ Pop-up s'affiche au téléchargement
+□ Identifiants acceptés
+□ Données visibles dans le dashboard
+
+
+═══════════════════════════════════════════════════════════════
+
+⚠️ DÉPANNAGE RAPIDE
+
+═══════════════════════════════════════════════════════════════
+
+❌ L'image ne se génère pas
+→ Steghide non installé
+→ Solution: sudo apt-get install steghide
+
+❌ L'image ne s'envoie pas
+→ Dossier uploads/images/ n'existe pas
+→ Solution: chmod 755 uploads/
+
+❌ Le pop-up ne s'affiche pas
+→ L'image n'a pas reçu le script
+→ Solution: Vérifiez Steghide (voir ci-dessus)
+
+❌ Les identifiants ne sont pas capturés
+→ La base de données n'existe pas
+→ Solution: Actualisez le dashboard
+→ Cela crée la table automatiquement
+
+
+═══════════════════════════════════════════════════════════════
+
+🎯 RÉSULTAT ATTENDU
+
+═══════════════════════════════════════════════════════════════
+
+Quand tout fonctionne:
+
+1. Attaquant upload image ✓
+2. Image se génère ✓
+3. Attaquant télécharge ✓
+4. Attaquant envoie ✓
+5. Victime voit l'image ✓
+6. Victime télécharge ✓
+7. Pop-up s'affiche ✓
+8. Victime rentre credentials ✓
+9. Données envoyées ✓
+10. Données visibles sur dashboard ✓
+
+= SUCCÈS COMPLET! 🎉
+
+
+═══════════════════════════════════════════════════════════════
+
+🔗 URLS À CONNAÎTRE
+
+═══════════════════════════════════════════════════════════════
+
+Login:              /messagerie/codes/login.php
+Génération:         /messagerie/codes/fake_login/steganography.php
+Messagerie:         /messagerie/codes/inbox.php
+Conversation:       /messagerie/codes/conversation.php
+Dashboard:          /messagerie/codes/fake_login/dashboard.php
+Uploads:            /messagerie/codes/uploads/images/
+
+
+═══════════════════════════════════════════════════════════════
+
+✅ FIN DU TEST
+
+═══════════════════════════════════════════════════════════════
+
+Vous avez testé avec succès:
+✓ Stéganographie d'images
+✓ Upload via messagerie
+✓ Exécution du phishing
+✓ Capture d'identifiants
+✓ Visualisation des résultats
+
+Bravo! 🎉
+
+
+═══════════════════════════════════════════════════════════════
+Système de Phishing Éducatif - Version Simplifiée
+Année 2026 | Usage Académique Uniquement
+═══════════════════════════════════════════════════════════════
