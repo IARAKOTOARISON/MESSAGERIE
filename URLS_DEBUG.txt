@@ -1,0 +1,147 @@
+🆘 URLS DE DÉBOGAGE - Steganographie
+
+═══════════════════════════════════════════════════════════════
+
+Si vous obtenez des erreurs, utilisez ces outils de diagnostic:
+
+═══════════════════════════════════════════════════════════════
+
+🔧 DIAGNOSTIQUE COMPLET (Recommandé)
+────────────────────────────────────
+
+http://localhost/projects/MDI/cyber-securite/messagerie/codes/fake_login/debug_steghide.php
+
+Cet outil vérifie:
+✓ Configuration du système
+✓ Permissions des dossiers
+✓ Installation de Steghide
+✓ Capacité de votre image
+✓ Test Steghide avec votre image
+
+
+🖼️ TEST FORMAT D'IMAGE
+────────────────────────────────────
+
+http://localhost/projects/MDI/cyber-securite/messagerie/codes/fake_login/test_image_format.php
+
+Vérifie si votre image est compatible:
+✓ Format (JPG, PNG, BMP)
+✓ Dimensions (min 100x100)
+✓ Taille fichier
+✓ Intégrité du fichier
+
+
+✓ TEST STEGHIDE
+────────────────────────────────────
+
+http://localhost/projects/MDI/cyber-securite/messagerie/codes/fake_login/test_steghide.php
+
+Test global du système:
+✓ Connexion utilisateur
+✓ Dossiers
+✓ Permissions
+✓ Steghide installé
+✓ Commande Steghide
+
+
+═══════════════════════════════════════════════════════════════
+
+🚀 ÉTAPES RECOMMANDÉES POUR LE DÉBOGAGE
+
+═══════════════════════════════════════════════════════════════
+
+1. COMMENCER PAR test_steghide.php
+   ↓
+   Vérifie que TOUT est OK sur le système
+
+2. SI OK, utiliser debug_steghide.php
+   ↓
+   Testez VOTRE image spécifique
+   
+3. SI ERREUR, regardez le message d'erreur
+   ↓
+   Appliquez la solution correspondante
+
+
+═══════════════════════════════════════════════════════════════
+
+❌ ERREURS COURANTES ET SOLUTIONS
+
+═══════════════════════════════════════════════════════════════
+
+ERREUR: "buffer overflow detected"
+────────────────────────────────────
+❌ Image trop petite!
+
+SOLUTION:
+→ Allez à debug_steghide.php
+→ Testez votre image
+→ Si TROP PETITE: utilisez une image > 1920x1280
+
+
+ERREUR: "le format du fichier n'est pas supporté"
+────────────────────────────────────
+❌ Image invalide ou corrompue!
+
+SOLUTION:
+→ Allez à test_image_format.php
+→ Vérifiez le format (JPG, PNG)
+→ Téléchargez une nouvelle image
+
+
+ERREUR: "Impossible de télécharger le fichier"
+────────────────────────────────────
+❌ Permissions du dossier uploads!
+
+SOLUTION:
+Ouvrez un terminal:
+    chmod -R 777 /opt/lampp/htdocs/projects/MDI/cyber-securite/messagerie/codes/uploads/
+
+
+ERREUR: "version `GLIBCXX' not found"
+────────────────────────────────────
+❌ Problème de bibliothèques XAMPP!
+
+SOLUTION:
+C'est corrigé automatiquement.
+Videz le cache (Ctrl+Shift+Delete) et rechargez (Ctrl+F5)
+
+
+═══════════════════════════════════════════════════════════════
+
+📥 IMAGES RECOMMANDÉES POUR TESTER
+
+═══════════════════════════════════════════════════════════════
+
+✅ TRÈS RECOMMANDÉ (1920x1280, haute résolution):
+https://picsum.photos/1920/1280
+
+✅ BON (800x600, résolution standard):
+https://picsum.photos/800/600
+
+✅ PNG alternative:
+https://via.placeholder.com/1920x1280/667eea/ffffff
+
+Téléchargez l'une de ces images et testez!
+
+
+═══════════════════════════════════════════════════════════════
+
+💡 CONSEILS
+
+═══════════════════════════════════════════════════════════════
+
+✓ Toujours utiliser une GROSSE image (> 1920x1280)
+✓ Toujours vérifier avec debug_steghide.php avant d'utiliser
+✓ Si doute: utiliser les images de picsum.photos
+✓ Copier/coller l'URL image si upload échoue
+
+
+═══════════════════════════════════════════════════════════════
+
+Questions? Lisez:
+- DEBOGAGE_STEGHIDE.txt
+- TEST_RAPIDE.txt
+- GUIDE_SIMPLIFIE.md
+
+═══════════════════════════════════════════════════════════════

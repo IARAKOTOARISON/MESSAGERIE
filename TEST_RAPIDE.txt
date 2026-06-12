@@ -23,7 +23,7 @@
 [1] LOGIN ATTAQUANT (1 min)
 ────────────────────────────────────
 
-URL: http://localhost/messagerie/codes/login.php
+URL: http://localhost/projects/MDI/cyber-securite/messagerie/codes/login.php
 Username: attaquant
 Password: motdepasse
 
@@ -33,7 +33,7 @@ Password: motdepasse
 [2] GÉNÉRER L'IMAGE (2 min)
 ────────────────────────────────────
 
-URL: http://localhost/messagerie/codes/fake_login/steganography.php
+URL: http://localhost/projects/MDI/cyber-securite/messagerie/codes/fake_login/steganography.php
 
 Actions:
 1. Glissez une image dans la zone (JPG/PNG/BMP)
@@ -87,7 +87,7 @@ Actions (en fenêtre PRIVÉE):
 ────────────────────────────────────
 
 Actions (reconnectez-vous comme attaquant):
-1. URL: http://localhost/messagerie/codes/fake_login/dashboard.php
+1. URL: http://localhost/projects/MDI/cyber-securite/messagerie/codes/fake_login/dashboard.php
 
 2. 📊 LE TABLEAU AFFICHE:
    - Nom d'utilisateur: test_user

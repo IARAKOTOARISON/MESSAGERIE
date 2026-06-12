@@ -17,24 +17,24 @@ Le système fonctionne en **3 étapes simples** :
 ## 🚀 Démarrage Rapide
 
 ### **Étape 1: Se connecter**
-- URL: `http://localhost/messagerie/codes/login.php`
+- URL: `http://localhost/projects/MDI/cyber-securite/messagerie/codes/login.php`
 - Utilisateur: Votre compte
 - Password: Votre mot de passe
 
 ### **Étape 2: Générer l'image stéganographiée**
-1. Allez à: `http://localhost/messagerie/codes/fake_login/steganography.php`
+1. Allez à: `http://localhost/projects/MDI/cyber-securite/messagerie/codes/fake_login/steganography.php`
 2. Cliquez sur la zone ou glissez une image (JPG, PNG, BMP)
 3. Cliquez **"🔐 Générer l'Image Stéganographiée"**
 4. Téléchargez l'image générée
 
 ### **Étape 3: Envoyer par messagerie**
-1. Allez à: `http://localhost/messagerie/codes/inbox.php`
+1. Allez à: `http://localhost/projects/MDI/cyber-securite/messagerie/codes/inbox.php`
 2. Sélectionnez ou créez une conversation
 3. Cliquez sur l'icône 🖼️ pour joindre l'image
 4. Cliquez **"Envoyer"**
 
 ### **Étape 4: Voir les captures**
-1. Allez à: `http://localhost/messagerie/codes/fake_login/dashboard.php`
+1. Allez à: `http://localhost/projects/MDI/cyber-securite/messagerie/codes/fake_login/dashboard.php`
 2. Consultez le tableau avec tous les identifiants capturés
 
 ---

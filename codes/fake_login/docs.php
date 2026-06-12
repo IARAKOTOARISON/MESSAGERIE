@@ -15,7 +15,7 @@ $user_id = $_SESSION["user_id"];
 // Variables pour les URLs
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'];
-$baseUrl = $protocol . "://" . $host . "/messagerie";
+$baseUrl = $protocol . "://" . $host . "/projects/MDI/cyber-securite/messagerie";
 
 ?>
 

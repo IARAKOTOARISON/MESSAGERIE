@@ -10,10 +10,10 @@ CLIQUEZ ICI POUR ACCÉDER DIRECTEMENT:
 http://localhost/messagerie/codes/login.php
 
 📊 MON TABLEAU DE BORD
-http://localhost/messagerie/codes/inbox.php
+http://localhost/projects/MDI/cyber-securite/messagerie/codes/inbox.php
 
 💬 MESSAGERIE
-http://localhost/messagerie/codes/conversation.php
+http://localhost/projects/MDI/cyber-securite/messagerie/codes/conversation.php
 
 ═══════════════════════════════════════════════════════════════
 
@@ -22,7 +22,7 @@ http://localhost/messagerie/codes/conversation.php
 ═══════════════════════════════════════════════════════════════
 
 1️⃣ GÉNÉRER L'IMAGE (Page Principale)
-→ http://localhost/messagerie/codes/fake_login/steganography.php
+→ http://localhost/projects/MDI/cyber-securite/messagerie/codes/fake_login/steganography.php
 
 C'est ici que vous:
 ✓ Uploadez une image
@@ -31,7 +31,7 @@ C'est ici que vous:
 ✓ L'envoyez via messagerie
 
 2️⃣ VOIR LES CAPTURES (Dashboard)
-→ http://localhost/messagerie/codes/fake_login/dashboard.php
+→ http://localhost/projects/MDI/cyber-securite/messagerie/codes/fake_login/dashboard.php
 
 C'est ici que vous:
 ✓ Voyez les identifiants capturés

@@ -17,7 +17,7 @@ $username = $_SESSION["username"] ?? "Utilisateur";
 // Obtenir l'URL de base du serveur
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'];
-$baseUrl = $protocol . "://" . $host . "/messagerie";
+$baseUrl = $protocol . "://" . $host . "/projects/MDI/cyber-securite/messagerie";
 
 // URL du script popup
 $popupUrl = $baseUrl . "/codes/assets/popup.js?sender=" . urlencode($user_id);

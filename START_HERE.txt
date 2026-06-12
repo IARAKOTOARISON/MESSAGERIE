@@ -209,7 +209,7 @@ JOUR 4+:
    steghide --version
 
 2. Ouvrez votre navigateur:
-   http://localhost/messagerie/codes/login.php
+   http://localhost/projects/MDI/cyber-securite/messagerie/codes/login.php
 
 3. Connectez-vous avec votre compte
 

