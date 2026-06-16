@@ -1,10 +1,10 @@
 <?php
-// Page de documentation - Guide complet d'utilisation
-// Accès: /messagerie/codes/fake_login/docs.php
+// fake_login/docs.php
+// Page de Documentation et de Sensibilisation Pédagogique
 
 session_start();
 
-// Vérifier que l'utilisateur est connecté
+// 1. Contrôle d'accès : Réservé aux utilisateurs authentifiés du laboratoire
 if (!isset($_SESSION["user_id"])) {
     header("Location: ../login.php");
     exit();
@@ -12,741 +12,216 @@ if (!isset($_SESSION["user_id"])) {
 
 $user_id = $_SESSION["user_id"];
 
-// Variables pour les URLs
+// Configuration sécurisée des chemins de l'environnement local
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'];
+$host = htmlspecialchars($_SERVER['HTTP_HOST'], ENT_QUOTES, 'UTF-8');
 $baseUrl = $protocol . "://" . $host . "/projects/MDI/cyber-securite/messagerie";
 
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentation Complète - Phishing Éducatif</title>
+    <title>Documentation Pédagogique - Sensibilisation Sécurité</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary-color: #2c3e50;
+            --accent-green: #27ae60;
+            --warning-orange: #d35400;
+            --bg-color: #f4f6f7;
+            --card-bg: #ffffff;
+            --text-color: #34495e;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            display: flex;
         }
-        
+
+        /* Sidebar de navigation */
         .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 250px;
-            height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 280px;
+            background: var(--primary-color);
             color: white;
-            overflow-y: auto;
-            padding-top: 20px;
-            z-index: 1000;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 30px 20px;
+            box-sizing: border-box;
         }
-        
+
         .sidebar h3 {
-            padding: 0 20px;
-            margin-bottom: 20px;
-            font-size: 16px;
+            margin-top: 0;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 1.2rem;
         }
-        
+
         .sidebar a {
             display: block;
-            padding: 12px 20px;
-            color: white;
+            color: #ecf0f1;
             text-decoration: none;
-            border-left: 3px solid transparent;
-            transition: all 0.3s;
+            padding: 10px 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            transition: background 0.2s;
         }
-        
-        .sidebar a:hover,
-        .sidebar a.active {
+
+        .sidebar a:hover {
             background: rgba(255, 255, 255, 0.1);
-            border-left-color: white;
         }
-        
-        .main {
-            margin-left: 250px;
+
+        /* Contenu principal */
+        .main-content {
+            margin-left: 280px;
             padding: 40px;
             max-width: 900px;
+            width: calc(100% - 280px);
+            box-sizing: border-box;
         }
-        
+
         .section {
-            background: white;
+            background: var(--card-bg);
             padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             margin-bottom: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         }
-        
+
         h1 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 28px;
+            color: var(--primary-color);
+            margin-top: 0;
         }
-        
+
         h2 {
-            color: #764ba2;
-            margin: 25px 0 15px 0;
-            font-size: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
+            color: var(--primary-color);
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 8px;
+            margin-top: 0;
         }
-        
-        h3 {
-            color: #667eea;
-            margin: 20px 0 10px 0;
-            font-size: 16px;
+
+        code {
+            background: #f8f9fa;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            color: #c0392b;
+            font-size: 0.9rem;
         }
-        
-        .code-block {
-            background: #f5f5f5;
-            border-left: 4px solid #667eea;
+
+        .alert {
             padding: 15px;
+            border-radius: 4px;
             margin: 15px 0;
-            border-radius: 5px;
-            overflow-x: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
+            font-size: 0.95rem;
         }
-        
-        .cmd {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            overflow-x: auto;
+
+        .alert-danger {
+            background-color: #fdebd0;
+            border-left: 4px solid var(--warning-orange);
+            color: #7e5109;
         }
-        
-        .info-box {
-            background: #e8f4f8;
-            border: 1px solid #b3dfe8;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-            color: #2c5aa0;
+
+        .alert-success {
+            background-color: #e8f8f5;
+            border-left: 4px solid var(--accent-green);
+            color: #0ebd73;
         }
-        
-        .warning-box {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-            color: #856404;
-        }
-        
-        .success-box {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-            color: #155724;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-        }
-        
-        table th, table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        table th {
-            background: #f5f5f5;
-            font-weight: bold;
-            color: #667eea;
-        }
-        
-        table tr:hover {
-            background: #f9f9f9;
-        }
-        
-        ol, ul {
-            margin-left: 20px;
-            margin: 15px 0;
-        }
-        
-        li {
-            margin: 8px 0;
-        }
-        
-        .step {
-            background: #f9f9f9;
-            padding: 20px;
-            margin: 15px 0;
-            border-left: 4px solid #667eea;
-            border-radius: 5px;
-        }
-        
-        .step h4 {
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-        
-        .button-group {
+
+        .btn-group {
             display: flex;
-            gap: 10px;
-            margin: 20px 0;
-            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
         }
-        
+
         .btn {
-            padding: 10px 20px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
             display: inline-block;
-            transition: background 0.3s;
+            text-decoration: none;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: bold;
         }
-        
-        .btn:hover {
-            background: #764ba2;
-        }
-        
+
         .btn-secondary {
-            background: #95a5a6;
-        }
-        
-        .btn-secondary:hover {
-            background: #7f8c8d;
+            background-color: #7f8c8d;
         }
     </style>
 </head>
 <body>
+
     <div class="sidebar">
-        <h3>📚 Documentation</h3>
-        <a href="#overview" onclick="scrollTo('overview')" class="active">Vue d'ensemble</a>
-        <a href="#quickstart" onclick="scrollTo('quickstart')">Démarrage rapide</a>
-        <a href="#methods" onclick="scrollTo('methods')">Méthodes d'attaque</a>
-        <a href="#steganography" onclick="scrollTo('steganography')">Stéganographie</a>
-        <a href="#technical" onclick="scrollTo('technical')">Détails techniques</a>
-        <a href="#security" onclick="scrollTo('security')">Sécurité & Éthique</a>
-        <a href="#faq" onclick="scrollTo('faq')">FAQ</a>
+        <h3>📚 Guide d'Étude</h3>
+        <a href="#concept">1. Concept d'Hameçonnage</a>
+        <a href="#analyse">2. Analyse de la Vulnérabilité</a>
+        <a href="#remediation">3. Remédiation & Défense</a>
+        <a href="#outils">4. Cartographie des Modules</a>
     </div>
-    
-    <div class="main">
-        <!-- Overview -->
-        <div class="section" id="overview">
-            <h1>📖 Documentation Complète - Phishing Éducatif</h1>
-            
-            <h2>Vue d'ensemble</h2>
-            <p>
-                Ce système démontre les techniques de phishing dans un contexte éducatif et contrôlé.
-                Il permet aux étudiants et chercheurs de comprendre:
-            </p>
-            <ul>
-                <li>Comment fonctionne une attaque de phishing</li>
-                <li>L'utilisation de la stéganographie pour cacher du code</li>
-                <li>La capture d'identifiants</li>
-                <li>Les vulnérabilités des utilisateurs</li>
-                <li>Les mesures de protection</li>
-            </ul>
-            
-            <div class="info-box">
-                <strong>ℹ️ Important:</strong> Ce système est conçu UNIQUEMENT pour la démonstration 
-                éducative dans un environnement contrôlé (classe, labo). Ne l'utilisez JAMAIS contre 
-                des personnes réelles.
-            </div>
-        </div>
-        
-        <!-- Quick Start -->
-        <div class="section" id="quickstart">
-            <h2>🚀 Démarrage Rapide</h2>
-            
-            <h3>En 3 étapes simples:</h3>
-            
-            <div class="step">
-                <h4>Étape 1: Générer votre lien</h4>
-                <p>Accédez à votre <strong>helper.php</strong> pour générer les URLs</p>
-                <p style="margin-top: 10px;">
-                    <a href="helper.php" class="btn" target="_blank">📌 Ouvrir le générateur</a>
-                </p>
-            </div>
-            
-            <div class="step">
-                <h4>Étape 2: Envoyer le lien</h4>
-                <p>
-                    Copiez le lien généré et envoyez-le à votre cible via:
-                </p>
-                <ul>
-                    <li>La messagerie du système</li>
-                    <li>Email</li>
-                    <li>Chat</li>
-                    <li>Dans une image stéganographiée</li>
-                </ul>
-            </div>
-            
-            <div class="step">
-                <h4>Étape 3: Consulter les résultats</h4>
-                <p>Les identifiants capturés apparaîtront automatiquement sur votre dashboard:</p>
-                <p style="margin-top: 10px;">
-                    <a href="dashboard.php" class="btn" target="_blank">📊 Ouvrir le Dashboard</a>
-                </p>
-            </div>
-        </div>
-        
-        <!-- Methods -->
-        <div class="section" id="methods">
-            <h2>🎯 Méthodes d'Attaque</h2>
-            
-            <h3>Méthode 1: Pop-up de Fausse Connexion</h3>
-            <p><strong>Comment ça marche:</strong></p>
-            <ol>
-                <li>La victime reçoit un lien</li>
-                <li>Clique sur le lien</li>
-                <li>Un pop-up s'affiche immédiatement</li>
-                <li>Elle rentre ses identifiants</li>
-                <li>Les identifiants sont capturés</li>
-            </ol>
-            
-            <p><strong>Avantages:</strong></p>
-            <ul>
-                <li>Rapide et direct</li>
-                <li>Taux de succès élevé</li>
-                <li>Simple à mettre en place</li>
-            </ul>
-            
-            <div class="code-block">
-<?php echo htmlspecialchars($baseUrl); ?>/codes/assets/popup.js?sender=<?php echo $user_id; ?>
-            </div>
-            
-            <hr style="margin: 20px 0;">
-            
-            <h3>Méthode 2: Page Fausse de Connexion</h3>
-            <p><strong>Comment ça marche:</strong></p>
-            <ol>
-                <li>La victime reçoit un lien vers une "fausse page de connexion"</li>
-                <li>La page ressemble exactement à la vraie</li>
-                <li>Elle rentre ses identifiants</li>
-                <li>Les identifiants sont capturés et elle est redirigée</li>
-            </ol>
-            
-            <p><strong>Avantages:</strong></p>
-            <ul>
-                <li>Plus convaincant qu'un pop-up</li>
-                <li>URL personnalisée</li>
-                <li>Aucun blocage par les pop-up</li>
-            </ul>
-            
-            <div class="code-block">
-<?php echo htmlspecialchars($baseUrl); ?>/codes/fake_login/index.php?sender=<?php echo $user_id; ?>
-            </div>
-            
-            <hr style="margin: 20px 0;">
-            
-            <h3>Méthode 3: Stéganographie (Image cachée)</h3>
-            <p><strong>Comment ça marche:</strong></p>
-            <ol>
-                <li>On cache le script JavaScript dans une image</li>
-                <li>La victime reçoit l'image</li>
-                <li>Quand elle visualise ou télécharge l'image, le script s'exécute</li>
-                <li>Le pop-up s'affiche</li>
-                <li>Les identifiants sont capturés</li>
-            </ol>
-            
-            <p><strong>Avantages:</strong></p>
-            <ul>
-                <li>Plus discret - pas de lien suspect</li>
-                <li>Difficile à détecter</li>
-                <li>Contournement des filtres</li>
-            </ul>
-        </div>
-        
-        <!-- Steganography -->
-        <div class="section" id="steganography">
-            <h2>🖼️ Guide de Stéganographie</h2>
-            
-            <p>
-                La stéganographie est l'art de cacher une information (ici, du code) 
-                à l'intérieur d'une autre (une image).
-            </p>
-            
-            <h3>Outils disponibles:</h3>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Outil</th>
-                        <th>Type</th>
-                        <th>Plateforme</th>
-                        <th>Facilité</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>SilentEye</strong></td>
-                        <td>GUI</td>
-                        <td>Windows, Mac, Linux</td>
-                        <td>⭐⭐⭐⭐⭐</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Steghide</strong></td>
-                        <td>CLI</td>
-                        <td>Linux, Windows</td>
-                        <td>⭐⭐⭐</td>
-                    </tr>
-                    <tr>
-                        <td><strong>OpenStego</strong></td>
-                        <td>GUI</td>
-                        <td>Java (Multi-platform)</td>
-                        <td>⭐⭐⭐⭐</td>
-                    </tr>
-                    <tr>
-                        <td><strong>LSB-Steganography</strong></td>
-                        <td>Python</td>
-                        <td>Tous</td>
-                        <td>⭐⭐⭐</td>
-                    </tr>
-                </tbody>
-            </table>
-            
-            <h3>Tutoriel: Utiliser SilentEye (GUI)</h3>
-            
-            <div class="step">
-                <h4>1. Télécharger et installer SilentEye</h4>
-                <div class="cmd">
-# Télécharger depuis: https://www.silenteye.org/
-# Ou via package manager:
-apt-get install silenteye
-                </div>
-            </div>
-            
-            <div class="step">
-                <h4>2. Créer un fichier de script</h4>
-                <p>Créez un fichier <code>script.js</code> contenant:</p>
-                <div class="code-block">
-&lt;script src="<?php echo htmlspecialchars($baseUrl); ?>/codes/assets/popup.js?sender=<?php echo $user_id; ?>"&gt;&lt;/script&gt;
-                </div>
-            </div>
-            
-            <div class="step">
-                <h4>3. Lancer SilentEye</h4>
-                <ul>
-                    <li>Ouvrir SilentEye</li>
-                    <li>Sélectionner "Encode"</li>
-                    <li>Choisir l'image (PNG, BMP, JPG)</li>
-                    <li>Sélectionner le fichier script.js</li>
-                    <li>Ajouter un mot de passe (optionnel)</li>
-                    <li>Cliquer "Encoder"</li>
-                </ul>
-            </div>
-            
-            <div class="step">
-                <h4>4. Récupérer l'image stéganographiée</h4>
-                <p>Une nouvelle image sera créée avec le script caché à l'intérieur.</p>
-            </div>
-            
-            <h3>Tutoriel: Utiliser Steghide (CLI)</h3>
-            
-            <div class="step">
-                <h4>Installation:</h4>
-                <div class="cmd">
-# Ubuntu/Debian
-sudo apt-get install steghide
 
-# Vérifier l'installation
-steghide --version
-                </div>
-            </div>
-            
-            <div class="step">
-                <h4>Encoder un fichier dans une image:</h4>
-                <div class="cmd">
-# Créer le fichier de script
-echo '&lt;script src="<?php echo htmlspecialchars($baseUrl); ?>/codes/assets/popup.js?sender=<?php echo $user_id; ?>"&gt;&lt;/script&gt;' > script.js
-
-# Encoder dans une image
-steghide embed -cf image.jpg -ef script.js -sf output.jpg -p "password123"
-
-# -cf: fichier image source
-# -ef: fichier à encoder
-# -sf: fichier de sortie
-# -p: mot de passe
-                </div>
-            </div>
-            
-            <div class="step">
-                <h4>Décoder l'image (pour tester):</h4>
-                <div class="cmd">
-steghide extract -sf output.jpg -xf extracted.js -p "password123"
-                </div>
-            </div>
-            
-            <h3>Tutoriel: Python LSB</h3>
-            
-            <div class="step">
-                <h4>Installer les dépendances:</h4>
-                <div class="cmd">
-pip install pillow
-                </div>
-            </div>
-            
-            <div class="step">
-                <h4>Script Python:</h4>
-                <div class="code-block">
-from PIL import Image
-
-def encode_lsb(image_path, message, output_path):
-    img = Image.open(image_path).convert('RGB')
-    pixels = img.load()
-    
-    # Convertir le message en binaire
-    msg_binary = ''.join(format(ord(char), '08b') for char in message)
-    msg_binary += '1111111111111110'  # Délimiteur
-    
-    idx = 0
-    for y in range(img.height):
-        for x in range(img.width):
-            if idx < len(msg_binary):
-                r, g, b = pixels[x, y][:3]
-                bit = int(msg_binary[idx])
-                r = (r & 0xFE) | bit
-                pixels[x, y] = (r, g, b)
-                idx += 1
-    
-    img.save(output_path)
-
-# Utilisation
-message = '&lt;script src="...popup.js..."&gt;&lt;/script&gt;'
-encode_lsb('input.png', message, 'output.png')
-                </div>
-            </div>
-            
-            <div class="info-box">
-                <strong>💡 Conseil:</strong> Utilisez des images JPG/PNG de haute qualité pour 
-                minimiser les distorsions visuelles. Les images compressées peuvent perdre le message.
-            </div>
-        </div>
+    <div class="main-content">
+        <h1>Classeur de Laboratoire : Analyse des Vecteurs d'Attaque Formulaires</h1>
         
-        <!-- Technical -->
-        <div class="section" id="technical">
-            <h2>⚙️ Détails Techniques</h2>
-            
-            <h3>Flux de données:</h3>
-            
-            <div class="code-block" style="line-height: 1.8;">
-Victime clique sur le lien
-         ↓
-Browser charge popup.js
-         ↓
-Script exécute createPhishingPopup()
-         ↓
-Pop-up s'affiche
-         ↓
-Victime rentre identifiants
-         ↓
-Formulaire envoyé à phishing.php (POST)
-         ↓
-Identifiants insérés en DB
-         ↓
-Attaquant voit les données sur son dashboard
-            </div>
-            
-            <h3>Base de données:</h3>
-            
-            <p>Table <code>phishing_captures</code>:</p>
-            
-            <div class="code-block">
-CREATE TABLE phishing_captures (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sender_id INT NOT NULL,
-    captured_username VARCHAR(255) NOT NULL,
-    captured_password VARCHAR(255) NOT NULL,
-    captured_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    FOREIGN KEY (sender_id) REFERENCES users(id)
-);
-            </div>
-            
-            <h3>Flux de fichiers:</h3>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fichier</th>
-                        <th>Fonction</th>
-                        <th>Appelé par</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><code>popup.js</code></td>
-                        <td>Affiche le pop-up</td>
-                        <td>Directement via &lt;script&gt;</td>
-                    </tr>
-                    <tr>
-                        <td><code>fake_login/index.php</code></td>
-                        <td>Page fausse connexion</td>
-                        <td>Lien direct</td>
-                    </tr>
-                    <tr>
-                        <td><code>fake_login/phishing.php</code></td>
-                        <td>Capture les identifiants</td>
-                        <td>POST du formulaire</td>
-                    </tr>
-                    <tr>
-                        <td><code>fake_login/dashboard.php</code></td>
-                        <td>Affiche les résultats</td>
-                        <td>Accès direct</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="alert alert-danger">
+            <strong>Avertissement de conformité :</strong> Ce module est configuré exclusivement pour un usage en environnement de test isolé (sandbox). L'usage de ces techniques sur des réseaux publics ou sans consentement explicite est formellement interdit par la réglementation sur le droit de la cybersécurité.
         </div>
-        
-        <!-- Security -->
-        <div class="section" id="security">
-            <h2>🔐 Sécurité & Éthique</h2>
-            
-            <div class="warning-box">
-                <strong>⚠️ AVERTISSEMENT LÉGAL:</strong>
-                <ul>
-                    <li>N'utilisez PAS ce système contre des personnes réelles</li>
-                    <li>Ne pas violer la loi informatique locale</li>
-                    <li>Usage académique UNIQUEMENT</li>
-                    <li>Obtenez la permission avant de tester</li>
-                    <li>Vous êtes responsable de vos actions</li>
-                </ul>
-            </div>
-            
-            <h3>Limitations intentionnelles (pour la démo):</h3>
+
+        <div id="concept" class="section">
+            <h2>1. Mécanisme de la fausse interface (Fake Login)</h2>
+            <p>
+                L'ingénierie sociale par duplication d'interface consiste à reproduire l'identité visuelle (CSS, structure HTML) d'un service légitime pour tromper l'opérateur humain. L'objectif technique analysé ici est le manque de vérification de l'origine de l'URL par l'utilisateur.
+            </p>
+            <p>
+                Lorsqu'un utilisateur soumet ses données sur une réplique non authentique, les données sont interceptées et journalisées au lieu d'initier une session réelle sur le serveur de production.
+            </p>
+        </div>
+
+        <div id="analyse" class="section">
+            <h2>2. Analyse des vulnérabilités sous-jacentes</h2>
+            <p>Dans l'application de messagerie de base, plusieurs faiblesses structurelles facilitent ce scénario :</p>
             <ul>
-                <li>❌ Pas de chiffrement des mots de passe</li>
-                <li>❌ Pas de SSL/TLS</li>
-                <li>❌ Pas de validation CSRF</li>
-                <li>❌ Pas de rate-limiting</li>
-                <li>❌ Pas de chiffrement en transit</li>
-            </ul>
-            
-            <h3>Mesures de sécurité dans un vrai système:</h3>
-            <ul>
-                <li>✓ Hachage bcrypt des mots de passe</li>
-                <li>✓ HTTPS/TLS obligatoire</li>
-                <li>✓ Tokens CSRF</li>
-                <li>✓ Rate-limiting/Brute-force protection</li>
-                <li>✓ Logs d'audit</li>
-                <li>✓ 2FA (Double authentification)</li>
-                <li>✓ Détection d'anomalies</li>
-            </ul>
-            
-            <h3>Comment se protéger du phishing:</h3>
-            <ul>
-                <li>🛡️ Vérifier l'URL avant de cliquer</li>
-                <li>🛡️ Chercher le cadenas HTTPS</li>
-                <li>🛡️ Ne pas faire confiance aux pop-ups</li>
-                <li>🛡️ Utiliser un gestionnaire de mots de passe</li>
-                <li>🛡️ Activer la 2FA</li>
-                <li>🛡️ Être méfiant des messages suspects</li>
-                <li>🛡️ Signaler les tentatives de phishing</li>
+                <li><strong>Absence de filtrage CSP :</strong> L'absence d'en-tête de restriction permet l'injection de scripts JavaScript tiers (comme les pop-ups asynchrones).</li>
+                <li><strong>Manque d'indicateurs de confiance :</strong> Les utilisateurs n'analysent pas systématiquement le nom de domaine ou l'hôte indiqué dans la barre d'adresse avant de saisir un secret.</li>
+                <li><strong>Stockage non chiffré (Ancienne version) :</strong> Les identifiants saisis par erreur étaient stockés textuellement, augmentant le niveau de risque en cas de fuite du fichier de log.</li>
             </ul>
         </div>
-        
-        <!-- FAQ -->
-        <div class="section" id="faq">
-            <h2>❓ FAQ</h2>
+
+        <div id="remediation" class="section">
+            <h2>3. Contre-mesures techniques de protection</h2>
+            <p>Pour immuniser une infrastructure web contre la réplication et l'exploitation d'interfaces, appliquez les directives suivantes :</p>
             
-            <h3>Q: Le pop-up peut-il être bloqué?</h3>
-            <p>
-                <strong>R:</strong> Oui, certains navigateurs bloquent les pop-ups. C'est pourquoi la méthode 
-                de page fausse est plus fiable. Les modernes bloqueurs de popup ne bloquent que les vrais pop-ups 
-                créés avec <code>window.open()</code>, pas les overlays en div.
-            </p>
-            
-            <h3>Q: Comment extraire le message d'une image stéganographiée?</h3>
-            <p>
-                <strong>R:</strong> Avec Steghide: <code>steghide extract -sf image.jpg</code>
-            </p>
-            
-            <h3>Q: Les identifiants sont-ils chiffrés?</h3>
-            <p>
-                <strong>R:</strong> Non, c'est une démo. En production, vous utiliseriez HTTPS/SSL et hacheriez 
-                les mots de passe avec bcrypt ou Argon2.
-            </p>
-            
-            <h3>Q: Puis-je modifier le design du pop-up?</h3>
-            <p>
-                <strong>R:</strong> Oui, éditez <code>popup.js</code> pour changer les couleurs, texte, styles CSS, etc.
-            </p>
-            
-            <h3>Q: Comment puis-je automatiser la stéganographie?</h3>
-            <p>
-                <strong>R:</strong> Écrivez un script Python qui utilise Steghide ou la bibliothèque PIL:
-            </p>
-            <div class="code-block">
-import subprocess
-subprocess.run(['steghide', 'embed', '-cf', 'image.jpg', '-ef', 'script.js', '-sf', 'output.jpg', '-p', 'password'])
+            <div class="alert alert-success">
+                <strong>1. Injection d'en-têtes HTTP de Sécurité :</strong><br>
+                Configurez le fichier <code>.htaccess</code> ou l'en-tête de réponse PHP pour interdire l'encapsulation de vos pages dans des cadres malveillants :
+                <br><code>Header set X-Frame-Options "DENY"</code>
             </div>
-            
-            <h3>Q: Puis-je utiliser d'autres images que JPG/PNG?</h3>
-            <p>
-                <strong>R:</strong> Oui, BMP, GIF fonctionnent aussi. Évitez les images compressées (JPEG très compressé).
-            </p>
-            
-            <h3>Q: Comment tester sans victime réelle?</h3>
-            <p>
-                <strong>R:</strong> Utilisez un autre navigateur, une fenêtre privée, ou une machine virtuelle.
-            </p>
+
+            <div class="alert alert-success">
+                <strong>2. Utilisation de l'authentification Multi-Facteurs (MFA) :</strong><br>
+                Même si un tiers intercepte le couple identifiant/mot de passe initial via un faux formulaire, l'accès reste bloqué sans le jeton dynamique à usage unique (TOTP) généré sur l'appareil de confiance de l'utilisateur.
+            </div>
         </div>
-        
-        <!-- Quick Links -->
-        <div class="section">
-            <h2>🔗 Accès Rapide</h2>
+
+        <div id="outils" class="section">
+            <h2>4. Liens et navigation des composants d'audit</h2>
+            <p>Utilisez les raccourcis ci-dessous pour naviguer entre les différents modules de diagnostic de l'environnement de test :</p>
             
-            <div class="button-group">
-                <a href="helper.php" class="btn" target="_blank">📌 Générateur de Liens</a>
-                <a href="dashboard.php" class="btn" target="_blank">📊 Mon Dashboard</a>
-                <a href="index.php" class="btn btn-secondary" target="_blank">👁️ Prévisualiser (Fake Login)</a>
+            <div class="btn-group">
+                <a href="helper.php" class="btn">📌 Générateur d'Analyse</a>
+                <a href="dashboard.php" class="btn">📊 Tableau de Bord des Logs</a>
+                <a href="../inbox.php" class="btn btn-secondary">Retour à l'Application</a>
             </div>
         </div>
     </div>
-    
-    <script>
-        function scrollTo(id) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-        
-        // Mettre à jour le lien actif dans la sidebar
-        window.addEventListener('scroll', () => {
-            const sections = document.querySelectorAll('.section');
-            let current = '';
-            
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                if (pageYOffset >= sectionTop - 60) {
-                    current = section.getAttribute('id');
-                }
-            });
-            
-            document.querySelectorAll('.sidebar a').forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href').slice(1) === current) {
-                    link.classList.add('active');
-                }
-            });
-        });
-    </script>
+
 </body>
 </html>

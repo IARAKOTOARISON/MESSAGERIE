@@ -1,19 +1,18 @@
 <?php
+// traitements/traitementRegister.php
 session_start();
-
 include 'db.php';
 
 $erreur = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
+    $username = isset($_POST['username']) ? trim($_POST['username']) : '';
+    $password = isset($_POST['password']) ? trim($_POST['password']) : '';
     
-    // Validation
     if (empty($username) || empty($password)) {
         $erreur = "Le nom d'utilisateur et le mot de passe sont requis.";
     } else {
-        // Vérifier si l'utilisateur existe déjà
+        // Vérifier de manière sécurisée si le nom d'utilisateur existe déjà
         $check_sql = "SELECT id FROM users WHERE username = ?";
         $check_stmt = $conn->prepare($check_sql);
         $check_stmt->bind_param("s", $username);
@@ -23,17 +22,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result->num_rows > 0) {
             $erreur = "Ce nom d'utilisateur est déjà utilisé.";
         } else {
-            // Insérer le nouvel utilisateur
+            // Hachage sécurisé du mot de passe
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            
+            // Insertion du nouvel utilisateur
             $insert_sql = "INSERT INTO users (username, password) VALUES (?, ?)";
             $insert_stmt = $conn->prepare($insert_sql);
-            $insert_stmt->bind_param("ss", $username, $password);
+            $insert_stmt->bind_param("ss", $username, $hashed_password);
             
             if ($insert_stmt->execute()) {
-                // Redirection vers la page de connexion
+                $insert_stmt->close();
+                $check_stmt->close();
+                $conn->close();
                 header("Location: ../login.php?succes=1");
                 exit();
             } else {
-                $erreur = "Erreur lors de l'inscription : " . $conn->error;
+                $erreur = "Une erreur interne est survenue lors de l'inscription.";
             }
             $insert_stmt->close();
         }
@@ -41,8 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     $conn->close();
-    
-    // Retour au formulaire avec erreur
     header("Location: ../register.php?erreur=" . urlencode($erreur));
     exit();
 }

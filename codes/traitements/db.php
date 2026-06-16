@@ -1,17 +1,18 @@
 <?php
+// traitements/db.php
 
-$conn = new mysqli(
-    "localhost",
-    "root",
-    "",
-    "messagerie"
-);
+$host = "localhost";
+$user = "root";
+$password = "";
+$dbname = "messagerie";
 
-if($conn->connect_error){
-    die("Erreur de connexion à la base de données: " . $conn->connect_error);
+// Connexion à la base de données avec gestion des erreurs
+$conn = new mysqli($host, $user, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Erreur critique de connexion à la base de données : " . $conn->connect_error);
 }
 
-// Définir le charset UTF-8
+// Configuration du jeu de caractères en utf8mb4 pour supporter tous les caractères/emojis
 $conn->set_charset("utf8mb4");
-
 ?>

