@@ -29,3 +29,12 @@ CREATE TABLE
         FOREIGN KEY (conversation_id) REFERENCES conversations (id) ON DELETE CASCADE,
         FOREIGN KEY (sender_id) REFERENCES users (id)
     );
+
+CREATE TABLE
+    phishing_captures (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(255),
+        password VARCHAR(255),
+        sender_id INT,
+        captured_at DATETIME
+    );

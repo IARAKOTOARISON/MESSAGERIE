@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($username) || empty($password)) {
         $erreur = "Le nom d'utilisateur et le mot de passe sont requis.";
     } else {
-        // Sélectionner l'utilisateur par son nom
+        // Requête préparée pour éviter les injections SQL
         $sql = "SELECT id, username, password FROM users WHERE username = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("s", $username);
@@ -22,9 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result->num_rows === 1) {
             $user = $result->fetch_assoc();
             
-            // Vérification de l'empreinte du mot de passe
-            if (password_verify($password, $user['password'])) {
-                // Initialisation des variables de session
+            // Comparaison directe (pas de hachage)
+            if ($password === $user['password']) {
                 $_SESSION["user_id"] = $user['id'];
                 $_SESSION["username"] = $user['username'];
                 
